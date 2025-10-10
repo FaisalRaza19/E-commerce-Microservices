@@ -1,0 +1,29 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack --port 3000",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint",
+    "check-types": "echo 'No TypeScript found, skipping type check'"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "lucide-react": "^0.545.0",
+    "next": "15.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-hook-form": "^7.64.0",
+    "react-toastify": "^11.0.5",
+    "zod": "^4.1.12",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "*",
+    "@repo/typescript-config": "*",
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4"
+  }
+}
