@@ -1,0 +1,26 @@
+{
+  "name": "product-service",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+    "node",
+    "express"
+  ],
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --env-file=.env --watch index.js",
+    "check-types": "echo 'No TypeScript found, skipping type check'"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "*",
+    "@repo/typescript-config": "*"
+  }
+}
