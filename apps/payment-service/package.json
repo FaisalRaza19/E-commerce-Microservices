@@ -8,8 +8,9 @@
     "check-types": "echo 'No TypeScript found, skipping type check'"
   },
   "dependencies": {
+    "@hono/clerk-auth": "^3.0.3",
     "@hono/node-server": "^1.19.5",
-    "hono": "^4.9.10"
+    "hono": "^4.9.11"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",

@@ -1,7 +1,15 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { clerkMiddleware,} from '@hono/clerk-auth'
+import { authUser } from './middleware/auth_middleware.js'
 
 const app = new Hono()
+
+app.use(clerkMiddleware())
+
+app.get("/test", authUser,(c) => {
+  return c.json({message: 'Payment service authenticated',userId:c.get("userId")})
+})
 
 app.get('/', (c) => {
   return c.text('Hello payment service')

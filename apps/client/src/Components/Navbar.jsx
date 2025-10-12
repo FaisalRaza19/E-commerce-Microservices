@@ -2,8 +2,10 @@ import React from 'react'
 import Image from "next/image";
 import Link from "next/link";
 import SearchBar from "./SearchBar";
-import { Bell, Home} from "lucide-react";
+import { Bell, Home } from "lucide-react";
 import ShoppingCartIcon from "./ShopingCartIcon";
+import ProfileButton from './ProfileButton';
+import { SignInButton,SignedIn, SignedOut,} from '@clerk/nextjs'
 
 const Navbar = () => {
   return (
@@ -25,11 +27,16 @@ const Navbar = () => {
       <div className="flex items-center gap-6">
         <SearchBar />
         <Link href="/">
-          <Home className="w-4 h-4 text-gray-600"/>
+          <Home className="w-4 h-4 text-gray-600" />
         </Link>
-        <Bell className="w-4 h-4 text-gray-600"/>
-        <ShoppingCartIcon/>
-        <Link href="/login">Sign in</Link>
+        <Bell className="w-4 h-4 text-gray-600" />
+        <ShoppingCartIcon />
+        <SignedOut>
+          <SignInButton />
+        </SignedOut>
+        <SignedIn>
+          <ProfileButton/>
+        </SignedIn>
       </div>
     </nav>
   );

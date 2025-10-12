@@ -17,6 +17,7 @@
     "@repo/typescript-config": "*"
   },
   "dependencies": {
+    "@clerk/fastify": "^2.4.37",
     "fastify": "^5.6.1"
   }
 }
