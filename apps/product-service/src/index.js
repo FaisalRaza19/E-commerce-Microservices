@@ -1,0 +1,34 @@
+import express from "express"
+import { clerkMiddleware } from '@clerk/express'
+import { userAuth } from "../middleware/auth_middleware.js"
+import productRouter from "./routes/product.route.js";
+import categoryRouter from "./routes/category.route.js";
+
+const app = express()
+
+app.use(clerkMiddleware())
+
+
+app.get("/test", userAuth, (req, res) => {
+    return res.json({ message: "Product service authenticated", userId: req?.userId })
+})
+
+app.use("/", (req, res) => {
+    res.send("Hello Product service")
+})
+
+
+app.use("/products", productRouter);
+app.use("/categories", categoryRouter);
+
+app.use((err, req, res, next) => {
+    console.log(err);
+    return res
+        .status(err.status || 500)
+        .json({ message: err.message || "Inter Server Error!" });
+});
+
+const port = process.env.PORT
+app.listen(port, () => {
+    console.log(`app running on port http://localhost:${port}`)
+})
