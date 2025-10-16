@@ -1,4 +1,4 @@
-import { Prisma, prisma } from "@repo/product-db";
+import { Prisma, prisma } from "@repo/db";
 
 export const createCategory = async (req, res) => {
     try {

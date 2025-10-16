@@ -1,5 +1,5 @@
-import { prisma, Prisma } from "@repo/product-db";
-import { producer } from "../utils/kafka.js";
+import { prisma, Prisma } from "@repo/db";
+// import { producer } from "../utils/kafka.js";
 
 export const createProduct = async (req, res) => {
     try {
@@ -24,13 +24,13 @@ export const createProduct = async (req, res) => {
 
         const product = await prisma.product.create({ data });
 
-        const stripeProduct = {
-            id: product.id.toString(),
-            name: product.name,
-            price: product.price,
-        };
+        // const stripeProduct = {
+        //     id: product.id.toString(),
+        //     name: product.name,
+        //     price: product.price,
+        // };
 
-        await producer.send("product.created", { value: stripeProduct });
+        // await producer.send("product.created", { value: stripeProduct });
 
         res.status(201).json(product);
     } catch (error) {
@@ -64,7 +64,7 @@ export const deleteProduct = async (req, res) => {
             where: { id: Number(id) },
         });
 
-        await producer.send("product.deleted", { value: Number(id) });
+        // await producer.send("product.deleted", { value: Number(id) });
 
         res.status(200).json(deletedProduct);
     } catch (error) {
