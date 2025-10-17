@@ -1,5 +1,5 @@
 {
-  "name": "@repo/db",
+  "name": "@repo/product-database",
   "type": "module",
   "exports": {
     ".": "./src/index.js"

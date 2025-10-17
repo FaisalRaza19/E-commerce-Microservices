@@ -1,4 +1,4 @@
-import { prisma, Prisma } from "@repo/db";
+import { prisma, Prisma } from "@repo/product-database";
 // import { producer } from "../utils/kafka.js";
 
 export const createProduct = async (req, res) => {
