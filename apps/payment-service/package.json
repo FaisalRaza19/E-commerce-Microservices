@@ -2,21 +2,19 @@
   "name": "payment-service",
   "type": "module",
   "scripts": {
-    "dev": "tsx --env-file=.env  --watch index.js",
+    "dev": "tsx --env-file=.env  --watch ./src/index.js",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node ./src/index.js",
     "check-types": "echo 'No TypeScript found, skipping type check'"
   },
   "dependencies": {
     "@hono/clerk-auth": "^3.0.3",
     "@hono/node-server": "^1.19.5",
-    "hono": "^4.9.11"
+    "hono": "^4.9.11",
+    "stripe": "^19.1.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
-    "@types/node": "^20.11.17",
-    "tsx": "^4.7.1",
-    "typescript": "^5.8.3"
+    "@repo/typescript-config": "*"
   }
 }
