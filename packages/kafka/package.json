@@ -1,0 +1,15 @@
+{
+  "name": "@repo/kafka",
+  "version": "0.0.1",
+  "main": "./src/index.js",
+  "type": "module",
+  "scripts": {
+    "check-types": "echo 'No TypeScript found, skipping type check'"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  }
+}

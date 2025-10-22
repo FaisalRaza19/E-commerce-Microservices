@@ -1,15 +1,14 @@
 import { Hono } from "hono";
 import stripe from "../utils/stripe.js";
-// import { authUser } from "../middleware/auth_middleware.js";
 import { getStripeProductPrice } from "../utils/stripeProduct.js";
+import { authUser } from "../middleware/auth_middleware.js";
 
 export const sessionRoute = new Hono()
 
 
-sessionRoute.post("/create-checkout-session", async (c) => {
+sessionRoute.post("/create-checkout-session", authUser,async (c) => {
   const { cart } = await c.req.json();
-  // const userId = c.get("userId");
-  const userId = "user_33xtc9sxZfPR5UpCCWUYZRUf4y9"
+  const userId = c.get("userId");
 
   if (!cart || !Array.isArray(cart)) {
     return c.json({ error: "Cart must be an array" }, 400);
@@ -17,9 +16,7 @@ sessionRoute.post("/create-checkout-session", async (c) => {
 
   const lineItems = await Promise.all(
     cart.map(async (item) => {
-      console.log(item)
       const unitAmount = await getStripeProductPrice(item.id);
-      console.log("unitamount",unitAmount)
       return {
         price_data: {
           currency: "usd",
@@ -33,8 +30,6 @@ sessionRoute.post("/create-checkout-session", async (c) => {
     })
   );
 
-  console.log("items", lineItems)
-
   try {
     const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
@@ -44,8 +39,6 @@ sessionRoute.post("/create-checkout-session", async (c) => {
       return_url:
         "http://localhost:3000/return?session_id={CHECKOUT_SESSION_ID}",
     });
-
-    console.log("session", session);
 
     return c.json({ checkoutSessionClientSecret: session.client_secret });
   } catch (error) {
@@ -62,8 +55,6 @@ sessionRoute.get("/:session_id", async (c) => {
       expand: ["line_items"],
     }
   );
-
-  // console.log(session);
 
   return c.json({
     status: session.status,

@@ -4,12 +4,14 @@ import { clerkMiddleware, } from '@hono/clerk-auth'
 import { sessionRoute } from "./routes/session.route.js";
 import { cors } from "hono/cors";
 import { createStripeProduct } from './utils/stripeProduct.js';
+import webhookRoute from './routes/webhooks.route.js';
 const app = new Hono()
 
 app.use("*", clerkMiddleware());
 app.use("*", cors({ origin: ["http://localhost:3000"] }));
 
 app.route("/sessions", sessionRoute);
+app.route("/webhooks", webhookRoute);
 
 // testing purpose
 app.post("/create-product", async (c) => {

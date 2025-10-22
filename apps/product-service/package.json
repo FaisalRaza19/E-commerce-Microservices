@@ -19,7 +19,8 @@
     "@clerk/express": "^1.7.37",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "@repo/product-database" : "*"
+    "@repo/product-database" : "*",
+    "@repo/kafka" : "*"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
