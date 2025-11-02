@@ -1,23 +1,28 @@
-export const createProducer = (Kafka) => {
-    try {
-        const producer = Kafka.producer()
-        const connect = async () => {
-            await producer.connect()
-        }
-        const send = async (topic, message) => {
-            await producer.send({
-                topic,
-                messages: [{ value: JSON.stringify(message) }]
-            })
-        }
-        
-        const disconnect = async () => {
-            await producer.disconnect()
-        }
+export const createProducer = (kafka) => {
+  const producer = kafka.producer();
 
-        return {connect,send,disconnect}
-    } catch (error) {
-        console.log("producer error", error)
-        return error.message
+  const connect = async () => {
+    await producer.connect();
+    console.log("Kafka producer connected");
+  };
+
+  const send = async (topic, message) => {
+    try {
+      await producer.send({
+        topic,
+        messages: [{ value: JSON.stringify(message) }],
+      });
+      console.log(`Message sent to topic "${topic}"`);
+    } catch (err) {
+      console.error("Error sending Kafka message:", err.message);
+      throw err
     }
-}
+  };
+
+  const disconnect = async () => {
+    await producer.disconnect();
+    console.log("Kafka producer disconnected");
+  };
+
+  return { connect, send, disconnect };
+};

@@ -1,5 +1,5 @@
 import { prisma, Prisma } from "@repo/product-database";
-// import { producer } from "../utils/kafka.js";
+import { producer } from "../utils/kafka.js";
 
 export const createProduct = async (req, res) => {
     try {
@@ -23,14 +23,15 @@ export const createProduct = async (req, res) => {
         }
 
         const product = await prisma.product.create({ data });
+        console.log(product)
 
-        // const stripeProduct = {
-        //     id: product.id.toString(),
-        //     name: product.name,
-        //     price: product.price,
-        // };
+        const stripeProduct = {
+            id: product.id.toString(),
+            name: product.name,
+            price: product.price,
+        };
 
-        // await producer.send("product.created", { value: stripeProduct });
+        await producer.send("product.created", stripeProduct);
 
         res.status(201).json(product);
     } catch (error) {
@@ -49,7 +50,7 @@ export const updateProduct = async (req, res) => {
             data,
         });
 
-        res.status(200).json(updatedProduct);
+        return res.status(200).json(updatedProduct);
     } catch (error) {
         console.error("Error updating product:", error);
         res.status(500).json({ message: "Internal Server Error" });
@@ -64,9 +65,9 @@ export const deleteProduct = async (req, res) => {
             where: { id: Number(id) },
         });
 
-        // await producer.send("product.deleted", { value: Number(id) });
+        await producer.send("product.deleted", Number(id));
 
-        res.status(200).json(deletedProduct);
+        return res.status(200).json(deletedProduct);
     } catch (error) {
         console.error("Error deleting product:", error);
         res.status(500).json({ message: "Internal Server Error" });

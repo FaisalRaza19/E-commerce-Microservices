@@ -3,7 +3,7 @@ import { clerkMiddleware } from '@clerk/express'
 import { userAuth } from "./middleware/auth_middleware.js"
 import productRouter from "./routes/product.route.js";
 import categoryRouter from "./routes/category.route.js";
-import { consumer, producer } from "./utils/kafka.js";
+import { producer} from "./utils/kafka.js";
 
 const app = express()
 
@@ -32,7 +32,7 @@ app.use("/", (req, res) => {
 const port = process.env.PORT
 const start = async () => {
     try {
-        Promise.all([await producer.connect(), await consumer.connect()]);
+        await producer.connect();
         app.listen(port, () => {
             console.log(`Product service is running on http://localhost:${port}`);
         });
