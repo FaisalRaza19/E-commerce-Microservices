@@ -13,7 +13,6 @@ webhookRoute.post("/stripe", async (c) => {
 
     try {
         event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-        console.log("event",event)
     } catch (error) {
         console.log("Webhook verification failed!");
         return c.json({ error: "Webhook verification failed!" }, 400);
@@ -22,12 +21,10 @@ webhookRoute.post("/stripe", async (c) => {
     switch (event.type) {
         case "checkout.session.completed":
             const session = event.data.object;
-            console.log(session)
 
             const lineItems = await stripe.checkout.sessions.listLineItems(
                 session.id
             );
-            console.log("lineitem",lineItems)
 
             const successfulPaymentMessage = {
                 userId: session.client_reference_id,
@@ -41,8 +38,6 @@ webhookRoute.post("/stripe", async (c) => {
                 })),
             };
 
-            console.log("successpayment",successfulPaymentMessage)
-
             await producer.send("payment.successful", successfulPaymentMessage);
 
             break;
@@ -55,3 +50,5 @@ webhookRoute.post("/stripe", async (c) => {
 });
 
 export default webhookRoute;
+
+

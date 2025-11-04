@@ -8,13 +8,14 @@ export const createProducer = (kafka) => {
 
   const send = async (topic, message) => {
     try {
+      console.log("producer message","topic"+topic,"message"+message)
       await producer.send({
         topic,
         messages: [{ value: JSON.stringify(message) }],
       });
       console.log(`Message sent to topic "${topic}"`);
     } catch (err) {
-      console.error("Error sending Kafka message:", err.message);
+      console.error("Error sending Kafka message:", err);
       throw err
     }
   };

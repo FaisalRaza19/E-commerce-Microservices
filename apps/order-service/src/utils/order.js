@@ -2,7 +2,6 @@ import { Order } from "@repo/order-db";
 import { producer } from "./kafka.js";
 
 export const createOrder = async (orderData) => {
-    console.log(orderData)
     const newOrder = new Order(orderData);
 
     try {

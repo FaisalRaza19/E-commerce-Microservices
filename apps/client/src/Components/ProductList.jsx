@@ -4,13 +4,22 @@ import Categories from "./Categories";
 import ProductCard from "./ProductCard";
 import Link from "next/link";
 import Filter from "./Filter";
-import { products } from "@/temp/data";
+// import { products } from "@/temp/data";
 
-const ProductList = ({ category,params }) => {
+const fetchData = async ({ category, sort, search, params, }) => {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/products?${category ? `category=${category}` : ""}${search ? `&search=${search}` : ""}&sort=${sort || "newest"}${params === "homepage" ? "&limit=8" : ""}`
+  );
+  const data = await res.json();
+  return data;
+};
+
+const ProductList = async ({ category, sort, search, params, }) => {
+  const products = await fetchData({ category, sort, search, params });
   return (
     <div className="w-full">
       <Categories />
-      {params === "products" && <Filter/>}
+      {params === "products" && <Filter />}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-12">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />

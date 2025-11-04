@@ -1,4 +1,4 @@
-import {createConsumer, createProducer,kafkaClient} from "@repo/kafka";
+import {createConsumer, createProducer,kafkaClient} from "@repo/kafka/src/index.js";
 
 const kafkaclient = kafkaClient("order-service");
 

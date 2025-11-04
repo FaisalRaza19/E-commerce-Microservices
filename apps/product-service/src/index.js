@@ -4,12 +4,19 @@ import { userAuth } from "./middleware/auth_middleware.js"
 import productRouter from "./routes/product.route.js";
 import categoryRouter from "./routes/category.route.js";
 import { producer} from "./utils/kafka.js";
+import cors from "constants"
 
 const app = express()
 
 app.use(clerkMiddleware())
 
 app.use(express.json());
+app.use(
+  cors({
+    origin: ["http://localhost:3002", "http://localhost:3003"],
+    credentials: true,
+  })
+);
 
 app.get("/test", userAuth, (req, res) => {
     return res.json({ message: "Product service authenticated", userId: req?.userId })

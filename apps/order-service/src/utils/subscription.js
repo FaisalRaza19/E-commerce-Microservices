@@ -6,7 +6,6 @@ export const runKafkaSubscriptions = async () => {
     {
       topicName: "payment.successful",
       topicHandler: async (message) => {
-        console.log("payment message",message)
         if (!message) {
           console.error("Received invalid payment", message);
           return;
