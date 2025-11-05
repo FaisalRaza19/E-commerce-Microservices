@@ -1,28 +1,18 @@
-import React from 'react'
 import ProductInteraction from "@/components/ProductInteraction";
 import Image from "next/image";
 
-// TEMPORARY
-const product = {
-    id: 1,
-    name: "Adidas CoreFit T-Shirt",
-    shortDescription:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-    description:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-    price: 59.9,
-    sizes: ["xs", "s", "m", "l", "xl"],
-    colors: ["gray", "purple", "green"],
-    images: {
-        gray: "/products/1g.png",
-        purple: "/products/1p.png",
-        green: "/products/1gr.png",
-    },
+const fetchProduct = async (id) => {
+    const res = await fetch(
+        `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/products/${id}`
+    );
+    const data = await res.json();
+    return data;
 };
 
-export const generateMetadata = async ({ params }) => {
-    // TODO:get the product from db
-    // TEMPORARY
+export const generateMetadata = async ({ params, }) => {
+    const { id } = await params;
+
+    const product = await fetchProduct(id);
     return {
         title: product.name,
         describe: product.description,
@@ -31,6 +21,9 @@ export const generateMetadata = async ({ params }) => {
 
 const ProductPage = async ({ params, searchParams, }) => {
     const { size, color } = await searchParams;
+    const { id } = await params;
+
+    const product = await fetchProduct(id);
 
     const selectedSize = size || (product.sizes[0]);
     const selectedColor = color || (product.colors[0]);
@@ -39,7 +32,7 @@ const ProductPage = async ({ params, searchParams, }) => {
             {/* IMAGE */}
             <div className="w-full lg:w-5/12 relative aspect-[2/3]">
                 <Image
-                    src={product.images[selectedColor]}
+                    src={(product.images)?.[selectedColor] || ""}
                     alt={product.name}
                     fill
                     className="object-contain rounded-md"

@@ -1,7 +1,7 @@
 import ProductList from "@/components/ProductList";
 import Image from "next/image";
 
-const Homepage = async ({searchParams}) => {
+const Homepage = async ({searchParams,}) => {
   const category = (await searchParams).category;
   return (
     <div className="">

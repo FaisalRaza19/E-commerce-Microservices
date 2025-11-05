@@ -4,7 +4,7 @@ import { shouldBeAdmin } from "../middleware/auth_middleware.js";
 
 const router = Router();
 
-router.post("/",shouldBeAdmin,createProduct);
+router.post("/", shouldBeAdmin, createProduct);
 router.put("/:id", shouldBeAdmin, updateProduct);
 router.delete("/:id", shouldBeAdmin, deleteProduct);
 router.get("/", getProducts);
