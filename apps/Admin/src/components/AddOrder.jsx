@@ -15,7 +15,7 @@ const formSchema = z.object({
 });
 
 const AddOrder = () => {
-  const form = useForm < z.infer < typeof formSchema >> ({
+  const form = useForm({
     resolver: zodResolver(formSchema),
   });
   return (

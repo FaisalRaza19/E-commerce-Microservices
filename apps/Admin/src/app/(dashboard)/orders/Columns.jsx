@@ -7,8 +7,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+
 
 const Columns = [
     {
@@ -30,25 +30,8 @@ const Columns = [
         ),
     },
     {
-        accessorKey: "avatar",
-        header: "Avatar",
-        cell: ({ row }) => {
-            const user = row.original;
-            return (
-                <div className="w-9 h-9 relative">
-                    <Image
-                        src={user.avatar}
-                        alt={user.fullName}
-                        fill
-                        className="rounded-full object-cover"
-                    />
-                </div>
-            );
-        },
-    },
-    {
-        accessorKey: "fullName",
-        header: "User",
+        accessorKey: "_id",
+        header: "ID",
     },
     {
         accessorKey: "email",
@@ -74,8 +57,9 @@ const Columns = [
                 <div
                     className={cn(
                         `p-1 rounded-md w-max text-xs`,
-                        status === "active" && "bg-green-500/40",
-                        status === "inactive" && "bg-red-500/40"
+                        status === "pending" && "bg-yellow-500/40",
+                        status === "success" && "bg-green-500/40",
+                        status === "failed" && "bg-red-500/40"
                     )}
                 >
                     {status}
@@ -84,9 +68,22 @@ const Columns = [
         },
     },
     {
+        accessorKey: "amount",
+        header: () => <div className="text-right">Amount</div>,
+        cell: ({ row }) => {
+            const amount = parseFloat(row.getValue("amount"));
+            const formatted = new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+            }).format(amount / 100);
+
+            return <div className="text-right font-medium">{formatted}</div>;
+        },
+    },
+    {
         id: "actions",
         cell: ({ row }) => {
-            const user = row.original;
+            const order = row.original;
 
             return (
                 <DropdownMenu>
@@ -99,19 +96,19 @@ const Columns = [
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem
-                            onClick={() => navigator.clipboard.writeText(user.id)}
+                            onClick={() => navigator.clipboard.writeText(order._id)}
                         >
-                            Copy user ID
+                            Copy order ID
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>
-                            <Link href={`/users/${user.id}`}>View customer</Link>
+                            <Link href={`/users/${order.userId}`}>View customer</Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem>View order details</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             );
         },
     },
 ];
-
-export default Columns;
+export default Columns

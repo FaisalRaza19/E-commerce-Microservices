@@ -1,15 +1,11 @@
-import React from 'react'
 "use client";
-import React from 'react'
-import {
-    flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, useReactTable,
-} from "@tanstack/react-table";
+import React, { useState } from 'react'
+import { flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, } from "@tanstack/react-table";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/TablePagination";
-import { useState } from "react";
 import { Trash2 } from "lucide-react";
 
-const DataTable = ({ columns, data }) => {
+const DataTable = ({ columns, data, }) => {
     const [sorting, setSorting] = useState([]);
     const [rowSelection, setRowSelection] = useState({});
 

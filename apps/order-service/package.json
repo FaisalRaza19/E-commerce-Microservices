@@ -2,7 +2,7 @@
   "name": "order-service",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node --env-file=.env --watch ./src/index.js",
@@ -18,8 +18,9 @@
   },
   "dependencies": {
     "@clerk/fastify": "^2.4.37",
-    "@repo/kafka" : "*",
+    "@repo/kafka": "*",
     "@repo/order-db": "*",
+    "date-fns": "^4.1.0",
     "fastify": "^5.6.1"
   }
 }

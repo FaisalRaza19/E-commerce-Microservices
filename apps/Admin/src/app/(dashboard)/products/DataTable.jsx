@@ -1,14 +1,13 @@
 "use client";
-import React from 'react'
+import React, { useState } from 'react'
 import {
     flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, useReactTable,
 } from "@tanstack/react-table";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/TablePagination";
-import { useState } from "react";
 import { Trash2 } from "lucide-react";
 
-const DataTable = ({ columns, data }) => {
+const DataTable = ({ columns, data, }) => {
     const [sorting, setSorting] = useState([]);
     const [rowSelection, setRowSelection] = useState({});
 
@@ -32,7 +31,7 @@ const DataTable = ({ columns, data }) => {
                 <div className="flex justify-end">
                     <button className="flex items-center gap-2 bg-red-500 text-white px-2 py-1 text-sm rounded-md m-4 cursor-pointer">
                         <Trash2 className="w-4 h-4" />
-                        Delete User(s)
+                        Delete Product(s)
                     </button>
                 </div>
             )}

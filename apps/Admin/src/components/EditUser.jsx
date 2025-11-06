@@ -1,12 +1,11 @@
 "use client";
 import React from 'react'
-import {SheetContent,SheetDescription,SheetHeader,SheetTitle,} from "@/components/ui/sheet";
+import { SheetContent, SheetDescription, SheetHeader, SheetTitle, } from "@/components/ui/sheet";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {Form,FormControl,FormDescription,FormField,FormItem,FormLabel,FormMessage,} from "./ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, } from "./ui/form";
 import { Input } from "./ui/input";
-import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue,} from "@/components/ui/select";
 import { Button } from "./ui/button";
 
 const formSchema = z.object({
@@ -21,7 +20,7 @@ const formSchema = z.object({
 });
 
 const EditUser = () => {
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: "John Doe",

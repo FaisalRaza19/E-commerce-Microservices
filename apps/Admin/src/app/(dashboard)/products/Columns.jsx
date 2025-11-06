@@ -36,7 +36,11 @@ const Columns = [
             return (
                 <div className="w-9 h-9 relative">
                     <Image
-                        src={product.images[product.colors[0]]}
+                        src={
+                            (product.images)?.[
+                            product.colors[0] || ""
+                            ] || ""
+                        }
                         alt={product.name}
                         fill
                         className="rounded-full object-cover"
@@ -83,13 +87,15 @@ const Columns = [
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem
-                            onClick={() => navigator.clipboard.writeText(product.id.toString())}
+                            onClick={() =>
+                                navigator.clipboard.writeText(product.id.toString())
+                            }
                         >
                             Copy product ID
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>
-                            <Link href={`/products/${product.id}`}>View customer</Link>
+                            <Link href={`/products/${product.id}`}>View product</Link>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
