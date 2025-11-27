@@ -1,0 +1,66 @@
+name: Build & Push to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # AUTH SERVICE
+      - name: Build & Push Auth Service
+        run: |
+          docker build -t auth-service ./apps/auth-service
+          docker tag auth-service:latest ${{ secrets.ECR_REGISTRY }}/auth-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/auth-service:latest
+
+      # ORDER SERVICE
+      - name: Build & Push Order Service
+        run: |
+          docker build -t order-service ./apps/order-service
+          docker tag order-service:latest ${{ secrets.ECR_REGISTRY }}/order-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/order-service:latest
+
+      # PAYMENT SERVICE
+      - name: Build & Push Payment Service
+        run: |
+          docker build -t payment-service ./apps/payment-service
+          docker tag payment-service:latest ${{ secrets.ECR_REGISTRY }}/payment-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/payment-service:latest
+
+      # EMAIL SERVICE
+      - name: Build & Push Email Service
+        run: |
+          docker build -t email-service ./apps/email-service
+          docker tag email-service:latest ${{ secrets.ECR_REGISTRY }}/email-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/email-service:latest
+
+      # CLIENT APP
+      - name: Build & Push Client App
+        run: |
+          docker build -t client ./apps/client
+          docker tag client:latest ${{ secrets.ECR_REGISTRY }}/client:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/client:latest
+
+      # ADMIN APP
+      - name: Build & Push Admin App
+        run: |
+          docker build -t admin ./apps/Admin
+          docker tag admin:latest ${{ secrets.ECR_REGISTRY }}/admin:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/admin:latest
