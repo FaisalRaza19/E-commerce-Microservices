@@ -1,30 +1,29 @@
-# Build stage (optional for Node.js, but keeping simple)
-FROM node:20-alpine AS builder
+FROM node:18-alpine AS base
 
+FROM base AS builder
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
-
-# Copy package.json & package-lock.json
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install --production
-
-# Copy source code
+RUN npm install -g turbo
 COPY . .
+# Prune the workspace for this specific app
+RUN turbo prune auth-service --docker
 
-# Production image
-FROM node:20-alpine AS production
-
+FROM base AS installer
 WORKDIR /app
+COPY .gitignore .gitignore
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
+RUN npm install
 
-# Copy app from builder
-COPY --from=builder /app ./
+COPY --from=builder /app/out/full/ .
+RUN npx turbo run build --filter=auth-service...
 
-# Expose port
-EXPOSE 8003
+FROM base AS runner
+WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 expressjs
+USER expressjs
 
-# Use NODE_ENV=production
-ENV NODE_ENV=production
+COPY --from=installer /app .
 
-# Command to run the service
-CMD ["node", "src/index.js"]
+CMD ["node", "apps/auth-service/src/index.js"]

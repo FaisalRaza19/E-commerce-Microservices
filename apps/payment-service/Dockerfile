@@ -1,30 +1,29 @@
-# Builder stage
-FROM node:20-alpine AS builder
+FROM node:18-alpine AS base
 
+FROM base AS builder
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
-
-# Copy package.json & package-lock.json
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install --production
-
-# Copy all source files
+RUN npm install -g turbo
 COPY . .
+RUN turbo prune payment-service --docker
 
-# Production stage
-FROM node:20-alpine AS production
-
+FROM base AS installer
 WORKDIR /app
+COPY .gitignore .gitignore
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
+RUN npm install
 
-# Copy built app from builder
-COPY --from=builder /app ./
+COPY --from=builder /app/out/full/ .
+# Build the TypeScript project
+RUN npx turbo run build --filter=payment-service...
 
-# Expose port
-EXPOSE 8002
+FROM base AS runner
+WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 honojs
+USER honojs
 
-# Set production environment
-ENV NODE_ENV=production
+COPY --from=installer /app .
 
-# Start the service
-CMD ["node", "src/index.js"]
+CMD ["node", "apps/payment-service/src/index.js"]

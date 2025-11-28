@@ -1,38 +1,34 @@
-# Build stage
-FROM node:20-alpine AS builder
+FROM node:18-alpine AS base
 
+FROM base AS builder
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
+RUN npm install -g turbo
+COPY . .
+RUN turbo prune client --docker
 
-# Copy package.json & package-lock.json
-COPY package*.json ./
-
-# Install dependencies
+FROM base AS installer
+WORKDIR /app
+COPY .gitignore .gitignore
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
 RUN npm install
 
-# Copy all source files
-COPY . .
+COPY --from=builder /app/out/full/ .
+RUN npx turbo run build --filter=client...
 
-# Build Next.js app (Turbopack)
-RUN npm run build
-
-# Production stage
-FROM node:20-alpine AS production
-
+FROM base AS runner
 WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+USER nextjs
 
-# Copy built files from builder
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package*.json ./
+COPY --from=installer /app/apps/client/next.config.mjs .
+COPY --from=installer /app/apps/client/package.json .
 
-# Install only production dependencies
-RUN npm install --production
+# Automatically leverage output traces to reduce image size
+COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
+COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
+COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
 
-# Expose port 3000
-EXPOSE 3000
-
-# Set NODE_ENV
-ENV NODE_ENV=production
-
-# Start the app
-CMD ["npm", "start"]
+CMD ["node", "apps/client/server.js"]

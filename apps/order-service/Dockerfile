@@ -1,30 +1,32 @@
-# Builder stage
-FROM node:20-alpine AS builder
+FROM node:18-alpine AS base
 
+FROM base AS builder
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
-
-# Copy package.json & package-lock.json
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install --production
-
-# Copy source code
+RUN npm install -g turbo
 COPY . .
+RUN turbo prune order-service --docker
 
-# Production stage
-FROM node:20-alpine AS production
+FROM base AS installer
+WORKDIR /app
+COPY .gitignore .gitignore
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
+RUN npm install
+
+COPY --from=builder /app/out/full/ .
+# Generate Prisma Client for Order DB
+WORKDIR /app/packages/order-db
+RUN npx prisma generate
 
 WORKDIR /app
 
-# Copy app from builder
-COPY --from=builder /app ./
+FROM base AS runner
+WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 fastifyjs
+USER fastifyjs
 
-# Expose port
-EXPOSE 8001
+COPY --from=installer /app .
 
-# Set production environment
-ENV NODE_ENV=production
-
-# Run the service
-CMD ["node", "src/index.js"]
+CMD ["node", "apps/order-service/src/index.js"]

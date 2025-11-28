@@ -26,41 +26,41 @@ jobs:
       # AUTH SERVICE
       - name: Build & Push Auth Service
         run: |
-          docker build -t auth-service ./apps/auth-service
+          docker build -f apps/auth-service/Dockerfile -t auth-service .
           docker tag auth-service:latest ${{ secrets.ECR_REGISTRY }}/auth-service:latest
           docker push ${{ secrets.ECR_REGISTRY }}/auth-service:latest
 
       # ORDER SERVICE
       - name: Build & Push Order Service
         run: |
-          docker build -t order-service ./apps/order-service
+          docker build -f apps/order-service/Dockerfile -t order-service .
           docker tag order-service:latest ${{ secrets.ECR_REGISTRY }}/order-service:latest
           docker push ${{ secrets.ECR_REGISTRY }}/order-service:latest
 
       # PAYMENT SERVICE
       - name: Build & Push Payment Service
         run: |
-          docker build -t payment-service ./apps/payment-service
+          docker build -f apps/payment-service/Dockerfile -t payment-service .
           docker tag payment-service:latest ${{ secrets.ECR_REGISTRY }}/payment-service:latest
           docker push ${{ secrets.ECR_REGISTRY }}/payment-service:latest
 
       # EMAIL SERVICE
       - name: Build & Push Email Service
         run: |
-          docker build -t email-service ./apps/email-service
+          docker build -f apps/email-service/Dockerfile -t email-service .
           docker tag email-service:latest ${{ secrets.ECR_REGISTRY }}/email-service:latest
           docker push ${{ secrets.ECR_REGISTRY }}/email-service:latest
 
       # CLIENT APP
       - name: Build & Push Client App
         run: |
-          docker build -t client ./apps/client
+          docker build -f apps/client/Dockerfile -t client .
           docker tag client:latest ${{ secrets.ECR_REGISTRY }}/client:latest
           docker push ${{ secrets.ECR_REGISTRY }}/client:latest
 
       # ADMIN APP
       - name: Build & Push Admin App
         run: |
-          docker build -t admin ./apps/Admin
+          docker build -f apps/Admin/Dockerfile -t admin .
           docker tag admin:latest ${{ secrets.ECR_REGISTRY }}/admin:latest
           docker push ${{ secrets.ECR_REGISTRY }}/admin:latest
