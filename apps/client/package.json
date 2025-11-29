@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --port 3000",
-    "build": "next build",
+    "build": "set NODE_ENV=production & next build",
     "start": "next start",
     "lint": "eslint",
     "check-types": "echo 'No TypeScript found, skipping type check'"
