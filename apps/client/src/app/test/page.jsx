@@ -1,5 +1,3 @@
-'use client';
-
 import { auth } from "@clerk/nextjs/server"
 
 const TestPage = async () => {
