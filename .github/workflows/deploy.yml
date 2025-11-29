@@ -1,118 +1,4 @@
-# name: Build & Push to ECR
-
-# on:
-#   push:
-#     branches:
-#       - main
-
-# env:
-#   IMAGE_TAG: 1.0.${{ github.run_number }}
-#   TURBO_BASE: ${{ github.sha }}
-
-# jobs:
-#   determine_changes:
-#     runs-on: ubuntu-latest
-#     outputs:
-#       services_to_deploy: ${{ steps.changes.outputs.apps_to_deploy }}
-
-#     steps:
-#       - name: Checkout Code (Full History)
-#         uses: actions/checkout@v4
-#         with:
-#           fetch-depth: 0
-
-#       - name: 🔨 Get Changed Services
-#         id: changes
-#         run: |
-#           # The list of all your apps
-#           ALL_APPS="product-service,auth-service,order-service,payment-service,email-service,client,Admin"
-
-#           # Find apps affected since the last successful push (HEAD^ is a good proxy)
-#           CHANGED_APPS=$(npx turbo affected --only=app --json --output-type=stream --since=HEAD^ --filter="{${ALL_APPS}}" | jq -r '.[].workspaceName' | tr '\n' ' ')
-
-#           # Convert the space-separated list into a GHA JSON array format
-#           JSON_ARRAY="[$(echo $CHANGED_APPS | tr ' ' ',' | sed 's/,*$//g' | sed 's/^,//g' | sed 's/,/","/g' | sed 's/^/\"/g' | sed 's/$/\"/g' | sed 's/\"\"//g')]"
-
-#           if [ "$JSON_ARRAY" = '[""]' ]; then
-#             JSON_ARRAY="[]"
-#           fi
-
-#           echo "Services to Deploy: $JSON_ARRAY"
-#           echo "apps_to_deploy=$JSON_ARRAY" >> $GITHUB_OUTPUT
-
-#   build:
-#     needs: determine_changes
-#     runs-on: ubuntu-latest
-#     strategy:
-#       matrix:
-#         service: [product-service, auth-service, order-service, payment-service, email-service, client, Admin]
-
-#     if: contains(fromJSON(needs.determine_changes.outputs.services_to_deploy), matrix.service)
-
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v3
-
-#       - name: Configure AWS Credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: ${{ secrets.AWS_REGION }}
-
-#       - name: Login to Amazon ECR
-#         uses: aws-actions/amazon-ecr-login@v2
-
-#       # PRODUCT SERVICE
-#       - name: Build & Push Product Service
-#         run: |
-#           docker build -f apps/product-service/Dockerfile -t product-service .
-#           docker tag product-service:latest ${{ secrets.ECR_REGISTRY }}/product-service:latest
-#           docker push ${{ secrets.ECR_REGISTRY }}/product-service:latest
-
-#       # AUTH SERVICE
-#       - name: Build & Push Auth Service
-#         run: |
-#           docker build -f apps/auth-service/Dockerfile -t auth-service .
-#           docker tag auth-service:latest ${{ secrets.ECR_REGISTRY }}/auth-service:latest
-#           docker push ${{ secrets.ECR_REGISTRY }}/auth-service:latest
-
-#       # ORDER SERVICE
-#       - name: Build & Push Order Service
-#         run: |
-#           docker build -f apps/order-service/Dockerfile -t order-service .
-#           docker tag order-service:latest ${{ secrets.ECR_REGISTRY }}/order-service:latest
-#           docker push ${{ secrets.ECR_REGISTRY }}/order-service:latest
-
-#       # PAYMENT SERVICE
-#       - name: Build & Push Payment Service
-#         run: |
-#           docker build -f apps/payment-service/Dockerfile -t payment-service .
-#           docker tag payment-service:latest ${{ secrets.ECR_REGISTRY }}/payment-service:latest
-#           docker push ${{ secrets.ECR_REGISTRY }}/payment-service:latest
-
-#       # EMAIL SERVICE
-#       - name: Build & Push Email Service
-#         run: |
-#           docker build -f apps/email-service/Dockerfile -t email-service .
-#           docker tag email-service:latest ${{ secrets.ECR_REGISTRY }}/email-service:latest
-#           docker push ${{ secrets.ECR_REGISTRY }}/email-service:latest
-
-#       # CLIENT APP
-#       - name: Build & Push Client App
-#         run: |
-#           docker build -f apps/client/Dockerfile -t client .
-#           docker tag client:latest ${{ secrets.ECR_REGISTRY }}/client:latest
-#           docker push ${{ secrets.ECR_REGISTRY }}/client:latest
-
-#       # ADMIN APP
-#       - name: Build & Push Admin App
-#         run: |
-#           docker build -f apps/Admin/Dockerfile -t admin .
-#           docker tag admin:latest ${{ secrets.ECR_REGISTRY }}/admin:latest
-#           docker push ${{ secrets.ECR_REGISTRY }}/admin:latest
-
-name: Selective Build & Push to ECR
+name: Build & Push to ECR
 
 on:
   push:
@@ -120,7 +6,8 @@ on:
       - main
 
 env:
-  IMAGE_TAG: 1.${{ github.run_number }}
+  IMAGE_TAG: 1.0.${{ github.run_number }}
+  TURBO_BASE: ${{ github.sha }}
 
 jobs:
   determine_changes:
@@ -129,20 +16,10 @@ jobs:
       services_to_deploy: ${{ steps.changes.outputs.apps_to_deploy }}
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Code (Full History)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      # Setup Node and install dependencies to run npx turbo
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          cache: "npm"
-
-      - name: Install Monorepo Dependencies
-        run: npm install
 
       - name: 🔨 Get Changed Services
         id: changes
@@ -153,7 +30,7 @@ jobs:
           # Find apps affected since the last successful push (HEAD^ is a good proxy)
           CHANGED_APPS=$(npx turbo affected --only=app --json --output-type=stream --since=HEAD^ --filter="{${ALL_APPS}}" | jq -r '.[].workspaceName' | tr '\n' ' ')
 
-          # Convert to JSON array for GHA output
+          # Convert the space-separated list into a GHA JSON array format
           JSON_ARRAY="[$(echo $CHANGED_APPS | tr ' ' ',' | sed 's/,*$//g' | sed 's/^,//g' | sed 's/,/","/g' | sed 's/^/\"/g' | sed 's/$/\"/g' | sed 's/\"\"//g')]"
 
           if [ "$JSON_ARRAY" = '[""]' ]; then
@@ -163,22 +40,19 @@ jobs:
           echo "Services to Deploy: $JSON_ARRAY"
           echo "apps_to_deploy=$JSON_ARRAY" >> $GITHUB_OUTPUT
 
-  # 2. Build and Push (Runs one parallel job for each changed service)
-  build_and_push_service:
+  build:
     needs: determine_changes
     runs-on: ubuntu-latest
-
-    if: needs.determine_changes.outputs.services_to_deploy != '[]'
     strategy:
-      # Dynamically create a job matrix using the list of changed services
       matrix:
-        service: ${{ fromJSON(needs.determine_changes.outputs.services_to_deploy) }}
+        service: [product-service, auth-service, order-service, payment-service, email-service, client, Admin]
+
+    if: contains(fromJSON(needs.determine_changes.outputs.services_to_deploy), matrix.service)
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      # Configure AWS Credentials (Needed for ECR login)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -189,26 +63,51 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # build and push service
-      - name: Build & Push ${{ matrix.service }}
+      # PRODUCT SERVICE
+      - name: Build & Push Product Service
         run: |
-          SERVICE_NAME="${{ matrix.service }}"
+          docker build -f apps/product-service/Dockerfile -t product-service .
+          docker tag product-service:latest ${{ secrets.ECR_REGISTRY }}/product-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/product-service:latest
 
-          # Determine Dockerfile Path (Handles 'Admin' capital letter)
-          DOCKERFILE_PATH="apps/$SERVICE_NAME/Dockerfile"
+      # AUTH SERVICE
+      - name: Build & Push Auth Service
+        run: |
+          docker build -f apps/auth-service/Dockerfile -t auth-service .
+          docker tag auth-service:latest ${{ secrets.ECR_REGISTRY }}/auth-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/auth-service:latest
 
-          FINAL_IMAGE="${{ secrets.ECR_REGISTRY }}/$SERVICE_NAME:${{ env.IMAGE_TAG }}"
+      # ORDER SERVICE
+      - name: Build & Push Order Service
+        run: |
+          docker build -f apps/order-service/Dockerfile -t order-service .
+          docker tag order-service:latest ${{ secrets.ECR_REGISTRY }}/order-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/order-service:latest
 
-          echo "--- Building $SERVICE_NAME with version tag: ${{ env.IMAGE_TAG }} ---"
+      # PAYMENT SERVICE
+      - name: Build & Push Payment Service
+        run: |
+          docker build -f apps/payment-service/Dockerfile -t payment-service .
+          docker tag payment-service:latest ${{ secrets.ECR_REGISTRY }}/payment-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/payment-service:latest
 
-          # 1. Build using a temporary tag specific to the service
-          # Using the correct Dockerfile path determined above
-          docker build -f $DOCKERFILE_PATH -t $SERVICE_NAME:build-temp .
+      # EMAIL SERVICE
+      - name: Build & Push Email Service
+        run: |
+          docker build -f apps/email-service/Dockerfile -t email-service .
+          docker tag email-service:latest ${{ secrets.ECR_REGISTRY }}/email-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/email-service:latest
 
-          # 2. Tag with the specific version number
-          docker tag $SERVICE_NAME:build-temp $FINAL_IMAGE
+      # CLIENT APP
+      - name: Build & Push Client App
+        run: |
+          docker build -f apps/client/Dockerfile -t client .
+          docker tag client:latest ${{ secrets.ECR_REGISTRY }}/client:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/client:latest
 
-          # 3. Push the versioned tag to ECR
-          docker push $FINAL_IMAGE
-
-          echo "Successfully pushed $FINAL_IMAGE to ECR."
+      # ADMIN APP
+      - name: Build & Push Admin App
+        run: |
+          docker build -f apps/Admin/Dockerfile -t admin .
+          docker tag admin:latest ${{ secrets.ECR_REGISTRY }}/admin:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/admin:latest
