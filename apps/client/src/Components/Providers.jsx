@@ -1,4 +1,4 @@
-'use client'; // <--- THIS IS CRITICAL
+'use client';
 
 import { ClerkProvider } from '@clerk/nextjs';
 

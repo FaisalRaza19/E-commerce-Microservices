@@ -1,13 +1,16 @@
 FROM node:18-alpine AS base
 
 FROM base AS builder
+
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 RUN npm install -g turbo
 COPY . .
+
 RUN turbo prune --scope=client --scope=@repo/typescript-config --scope=@repo/eslint-config --docker
 
 FROM base AS installer
+
 WORKDIR /app/apps/client
 
 COPY --from=builder /app/out/json/apps/client/package.json ./package.json
@@ -25,18 +28,22 @@ COPY apps/client/tsconfig.json ./
 
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA"
 
-RUN ls -R /app/apps/client
 RUN npm run build
 
 FROM base AS runner
-WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 USER nextjs
 
+WORKDIR /app/apps/client
+
 COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
+COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./.next/static
+COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./public
 COPY --from=installer --chown=nextjs:nodejs /app/apps/client/next.config.mjs ./
 
 CMD ["node", "server.js"]
