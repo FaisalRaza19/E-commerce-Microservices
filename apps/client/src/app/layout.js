@@ -1,6 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Providers from '@/components/Providers';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ClerkProvider } from '@clerk/nextjs'
@@ -23,7 +22,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <Providers>
+    <ClerkProvider>
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -36,6 +35,6 @@ export default function RootLayout({ children }) {
           <ToastContainer position="bottom-right" />
         </body>
       </html>
-    </Providers>
+    </ClerkProvider>
   );
 }
