@@ -23,6 +23,13 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      # PRODUCT SERVICE
+      - name: Build & Push Product Service
+        run: |
+          docker build -f apps/product-service/Dockerfile -t product-service .
+          docker tag product-service:latest ${{ secrets.ECR_REGISTRY }}/product-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/product-service:latest
+
       # AUTH SERVICE
       - name: Build & Push Auth Service
         run: |
