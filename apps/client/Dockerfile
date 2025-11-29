@@ -8,21 +8,22 @@ COPY . .
 RUN turbo prune --scope=client --scope=@repo/typescript-config --scope=@repo/eslint-config --docker
 
 FROM base AS installer
+WORKDIR /app/apps/client
 
-WORKDIR /app/apps/client 
+COPY --from=builder /app/out/json/apps/client/package.json ./package.json
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
+COPY --from=builder /app/out/json/package.json ../../package.json
+COPY --from=builder /app/out/package-lock.json ../../package-lock.json
 
-COPY --from=builder /app/out/json/apps/client/package.json ./package.json 
-COPY --from=builder /app/out/package-lock.json ./package-lock.json 
-COPY --from=builder /app/out/json/package.json ../../package.json 
-COPY --from=builder /app/out/package-lock.json ../../package-lock.json 
+RUN npm install
 
-RUN npm install 
+# IMPORTANT FIX: only copy the client folder
+COPY --from=builder /app/out/full/apps/client/ .
 
-COPY --from=builder /app/out/full/ .
-
+# Copy internal shared configs
 COPY --from=builder /app/out/full/packages/typescript-config/ ../../packages/typescript-config/
 
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA" 
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA"
 
 RUN npm run build
 
