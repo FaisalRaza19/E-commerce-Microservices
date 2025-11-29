@@ -17,9 +17,8 @@ COPY --from=builder /app/out/package-lock.json ../../package-lock.json
 
 RUN npm install
 
-# IMPORTANT FIX: only copy the client folder
-COPY --from=builder /app/out/full/apps/client/apps/client/ .
-
+# client folder
+COPY --from=builder /app/out/full/apps/client/ .
 
 # Copy internal shared configs
 COPY --from=builder /app/out/full/packages/typescript-config/ ../../packages/typescript-config/
