@@ -1,21 +1,7 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingRoot: path.resolve(__dirname, '../../..'), 
-  output: 'standalone', 
-
-  webpack: (config, { isServer }) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': path.join(__dirname, 'src'),
-    };
-    return config;
-  },
+  outputFileTracingRoot: path.join(__dirname, '../../'),
+  output: 'standalone',
 };
 
 export default nextConfig;
