@@ -23,19 +23,19 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # ADMIN APP
-      - name: Build & Push Admin App
-        run: |
-          docker build -f apps/Admin/Dockerfile -t admin .
-          docker tag admin:latest ${{ secrets.ECR_REGISTRY }}/admin:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/admin:latest
-
       # CLIENT APP
       - name: Build & Push Client App
         run: |
           docker build -f apps/client/Dockerfile -t client .
           docker tag client:latest ${{ secrets.ECR_REGISTRY }}/client:latest
           docker push ${{ secrets.ECR_REGISTRY }}/client:latest
+
+      # ADMIN APP
+      - name: Build & Push Admin App
+        run: |
+          docker build -f apps/Admin/Dockerfile -t admin .
+          docker tag admin:latest ${{ secrets.ECR_REGISTRY }}/admin:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/admin:latest
 
       # PRODUCT SERVICE
       - name: Build & Push Product Service
