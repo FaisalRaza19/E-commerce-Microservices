@@ -168,6 +168,7 @@ jobs:
     needs: determine_changes
     runs-on: ubuntu-latest
 
+    if: needs.determine_changes.outputs.services_to_deploy != '[]'
     strategy:
       # Dynamically create a job matrix using the list of changed services
       matrix:
