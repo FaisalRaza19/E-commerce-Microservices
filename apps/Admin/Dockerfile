@@ -16,6 +16,9 @@ RUN npm install
 
 COPY --from=builder /app/out/full/ .
 
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA" 
+
+WORKDIR /app/apps/Admin
 RUN npm run build
 
 FROM base AS runner
