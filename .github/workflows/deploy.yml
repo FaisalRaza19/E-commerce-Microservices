@@ -27,47 +27,47 @@ jobs:
       - name: Build & Push Product Service
         run: |
           docker build -f apps/product-service/Dockerfile -t product-service .
-          docker tag product-service:1.0 ${{ secrets.ECR_REGISTRY }}/product-service:1.0
-          docker push ${{ secrets.ECR_REGISTRY }}/product-service:1.0
+          docker tag product-service:latest ${{ secrets.ECR_REGISTRY }}/product-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/product-service:latest
 
       # AUTH SERVICE
       - name: Build & Push Auth Service
         run: |
           docker build -f apps/auth-service/Dockerfile -t auth-service .
-          docker tag auth-service:1.0 ${{ secrets.ECR_REGISTRY }}/auth-service:1.0
-          docker push ${{ secrets.ECR_REGISTRY }}/auth-service:1.0
+          docker tag auth-service:latest ${{ secrets.ECR_REGISTRY }}/auth-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/auth-service:latest
 
       # ORDER SERVICE
       - name: Build & Push Order Service
         run: |
           docker build -f apps/order-service/Dockerfile -t order-service .
-          docker tag order-service:1.0 ${{ secrets.ECR_REGISTRY }}/order-service:1.0
-          docker push ${{ secrets.ECR_REGISTRY }}/order-service:1.0
+          docker tag order-service:latest ${{ secrets.ECR_REGISTRY }}/order-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/order-service:latest
 
       # PAYMENT SERVICE
       - name: Build & Push Payment Service
         run: |
           docker build -f apps/payment-service/Dockerfile -t payment-service .
-          docker tag payment-service:1.0 ${{ secrets.ECR_REGISTRY }}/payment-service:1.0
-          docker push ${{ secrets.ECR_REGISTRY }}/payment-service:1.0
+          docker tag payment-service:latest ${{ secrets.ECR_REGISTRY }}/payment-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/payment-service:latest
 
       # EMAIL SERVICE
       - name: Build & Push Email Service
         run: |
           docker build -f apps/email-service/Dockerfile -t email-service .
-          docker tag email-service:1.0 ${{ secrets.ECR_REGISTRY }}/email-service:1.0
-          docker push ${{ secrets.ECR_REGISTRY }}/email-service:1.0
+          docker tag email-service:latest ${{ secrets.ECR_REGISTRY }}/email-service:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/email-service:latest
 
       # CLIENT APP
       - name: Build & Push Client App
         run: |
           docker build -f apps/client/Dockerfile -t client .
-          docker tag client:1.0 ${{ secrets.ECR_REGISTRY }}/client:1.0
-          docker push ${{ secrets.ECR_REGISTRY }}/client:1.0
+          docker tag client:latest ${{ secrets.ECR_REGISTRY }}/client:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/client:latest
 
       # ADMIN APP
       - name: Build & Push Admin App
         run: |
           docker build -f apps/Admin/Dockerfile -t admin .
-          docker tag admin:1.0 ${{ secrets.ECR_REGISTRY }}/admin:1.0
-          docker push ${{ secrets.ECR_REGISTRY }}/admin:1.0
+          docker tag admin:latest ${{ secrets.ECR_REGISTRY }}/admin:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/admin:latest
