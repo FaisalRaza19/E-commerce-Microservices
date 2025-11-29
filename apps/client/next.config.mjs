@@ -15,7 +15,7 @@ const nextConfig = {
 
     return config;
   },
-
+  outputFileTracingRoot: '../..',  
   output: 'standalone', 
 };
 
