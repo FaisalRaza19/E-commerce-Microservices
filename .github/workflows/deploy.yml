@@ -5,50 +5,10 @@ on:
     branches:
       - main
 
-env:
-  IMAGE_TAG: 1.0.${{ github.run_number }}
-  TURBO_BASE: ${{ github.sha }}
-
 jobs:
-  determine_changes:
-    runs-on: ubuntu-latest
-    outputs:
-      services_to_deploy: ${{ steps.changes.outputs.apps_to_deploy }}
-
-    steps:
-      - name: Checkout Code (Full History)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 🔨 Get Changed Services
-        id: changes
-        run: |
-          # The list of all your apps
-          ALL_APPS="product-service,auth-service,order-service,payment-service,email-service,client,Admin"
-
-          # Find apps affected since the last successful push (HEAD^ is a good proxy)
-          CHANGED_APPS=$(npx turbo affected --only=app --json --output-type=stream --since=HEAD^ --filter="{${ALL_APPS}}" | jq -r '.[].workspaceName' | tr '\n' ' ')
-
-          # Convert the space-separated list into a GHA JSON array format
-          JSON_ARRAY="[$(echo $CHANGED_APPS | tr ' ' ',' | sed 's/,*$//g' | sed 's/^,//g' | sed 's/,/","/g' | sed 's/^/\"/g' | sed 's/$/\"/g' | sed 's/\"\"//g')]"
-
-          if [ "$JSON_ARRAY" = '[""]' ]; then
-            JSON_ARRAY="[]"
-          fi
-
-          echo "Services to Deploy: $JSON_ARRAY"
-          echo "apps_to_deploy=$JSON_ARRAY" >> $GITHUB_OUTPUT
-
   build:
-    needs: determine_changes
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [product-service, auth-service, order-service, payment-service, email-service, client, Admin]
-
-    if: contains(fromJSON(needs.determine_changes.outputs.services_to_deploy), matrix.service)
-
+    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
