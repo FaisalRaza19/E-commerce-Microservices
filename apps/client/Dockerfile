@@ -19,12 +19,12 @@ COPY --from=builder /app/out/package-lock.json ../../package-lock.json
 RUN npm install 
 
 COPY --from=builder /app/out/full/apps/client/ ./
+
 COPY --from=builder /app/out/full/packages/typescript-config/ ../../packages/typescript-config/
 
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA" 
 
-WORKDIR /app/apps/client
-RUN npm run build 
+RUN npm run build
 
 FROM base AS runner
 WORKDIR /app
