@@ -15,7 +15,8 @@ COPY --from=builder /app/out/package-lock.json ./package-lock.json
 RUN npm install
 
 COPY --from=builder /app/out/full/ .
-RUN npx turbo run build --filter=admin...
+
+RUN npm run build
 
 FROM base AS runner
 WORKDIR /app
