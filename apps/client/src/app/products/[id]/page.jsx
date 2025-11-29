@@ -1,5 +1,3 @@
-'use client';
-
 import ProductInteraction from "@/components/ProductInteraction";
 import Image from "next/image";
 
