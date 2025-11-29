@@ -5,7 +5,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 RUN npm install -g turbo
 COPY . .
-RUN turbo prune client --docker
+RUN turbo prune --scope=client --scope=@repo/typescript-config --scope=@repo/eslint-config --docker
 
 FROM base AS installer
 
