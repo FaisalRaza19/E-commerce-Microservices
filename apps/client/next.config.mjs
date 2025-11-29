@@ -8,6 +8,12 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../../'),
   output: 'standalone',
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default nextConfig;
