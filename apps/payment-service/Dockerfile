@@ -15,8 +15,6 @@ COPY --from=builder /app/out/package-lock.json ./package-lock.json
 RUN npm install
 
 COPY --from=builder /app/out/full/ .
-# Build the TypeScript project
-RUN npx turbo run build --filter=payment-service...
 
 FROM base AS runner
 WORKDIR /app
