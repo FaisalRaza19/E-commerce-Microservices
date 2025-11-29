@@ -7,8 +7,15 @@ const __dirname = path.dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: path.resolve(__dirname, '../../..'), 
-
   output: 'standalone', 
+
+  webpack: (config, { isServer }) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.join(__dirname, 'src'),
+    };
+    return config;
+  },
 };
 
 export default nextConfig;
