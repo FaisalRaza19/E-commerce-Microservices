@@ -5,6 +5,9 @@ const fetchProduct = async (id) => {
     const res = await fetch(
         `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/products/${id}`
     );
+    if (!res) {
+        return <div>data not available</div>
+    }
     const data = await res.json();
     return data;
 };

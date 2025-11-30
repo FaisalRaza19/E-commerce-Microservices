@@ -3,30 +3,34 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "next dev --turbopack --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "check-types": "echo 'No TypeScript found, skipping type check'"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.33.3",
+    "@clerk/nextjs": "^6.35.5",
     "@hookform/resolvers": "^5.2.2",
-    "@stripe/react-stripe-js": "^5.2.0",
-    "@stripe/stripe-js": "^8.1.0",
-    "lucide-react": "^0.545.0",
-    "next": "15.5.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-hook-form": "^7.64.0",
+    "@stripe/react-stripe-js": "^5.4.1",
+    "@stripe/stripe-js": "^8.5.3",
+    "lucide-react": "^0.555.0",
+    "next": "16.0.5",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-hook-form": "^7.67.0",
     "react-toastify": "^11.0.5",
-    "zod": "^4.1.12",
-    "zustand": "^5.0.8"
+    "zod": "^4.1.13",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
     "@tailwindcss/postcss": "^4",
+    "babel-plugin-react-compiler": "1.0.0",
+    "baseline-browser-mapping": "^2.8.32",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.5",
     "tailwindcss": "^4"
   }
 }

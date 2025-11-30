@@ -10,6 +10,9 @@ const ReturnPage = async ({ searchParams }) => {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_PAYMENT_SERVICE_URL}/sessions/${session_id}`
   );
+  if (!res) {
+    return <div>data not found</div>
+  }
   const data = await res.json();
 
   return (

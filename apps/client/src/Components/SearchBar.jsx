@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const SearchBar = () => {
+function SearchBarContent() {
   const [value, setValue] = useState("");
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -33,5 +33,10 @@ const SearchBar = () => {
   );
 };
 
+const SearchBar = () => {
+  <Suspense fallback={<div className="flex items-center justify-center mt-12">Loading SearchBar...</div>}>
+    <SearchBarContent />
+  </Suspense>
+};
 export default SearchBar;
 

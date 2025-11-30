@@ -1,9 +1,10 @@
 "use client";
 
+import { Suspense } from 'react';
 import React from 'react'
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-const Filter = () => {
+function FilterContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -29,6 +30,14 @@ const Filter = () => {
         <option value="desc">Price: High to Low</option>
       </select>
     </div>
+  );
+};
+
+const Filter = () => {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center mt-12">Loading Filter...</div>}>
+      <FilterContent />
+    </Suspense>
   );
 };
 

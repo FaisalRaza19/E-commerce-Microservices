@@ -1,10 +1,11 @@
 "use client";
 
+import { Suspense } from 'react';
 import React from 'react'
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { categories } from "@/temp/data";
 
-const Categories = () => {
+function CategoriesContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -32,6 +33,13 @@ const Categories = () => {
             ))}
         </div>
     );
+};
+
+
+const Categories = () => {
+    <Suspense fallback={<div className="flex items-center justify-center mt-12">Loading Categories...</div>}>
+        <CategoriesContent />
+    </Suspense>
 };
 
 export default Categories

@@ -1,13 +1,14 @@
 "use client";
 
 import React from 'react'
+import { Suspense } from "react"
 import useCartStore from "@/stores/cartStore";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
-const ProductInteraction = ({product,selectedSize,selectedColor,}) => {
+function ProductInteractionContent({ product, selectedSize, selectedColor, }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -15,7 +16,7 @@ const ProductInteraction = ({product,selectedSize,selectedColor,}) => {
 
   const { addToCart } = useCartStore();
 
-  const handleTypeChange = (type,value) => {
+  const handleTypeChange = (type, value) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set(type, value);
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
@@ -48,18 +49,16 @@ const ProductInteraction = ({product,selectedSize,selectedColor,}) => {
         <div className="flex items-center gap-2">
           {product.sizes.map((size) => (
             <div
-              className={`cursor-pointer border-1 p-[2px] ${
-                selectedSize === size ? "border-gray-600" : "border-gray-300"
-              }`}
+              className={`cursor-pointer border-1 p-[2px] ${selectedSize === size ? "border-gray-600" : "border-gray-300"
+                }`}
               key={size}
               onClick={() => handleTypeChange("size", size)}
             >
               <div
-                className={`w-6 h-6 text-center flex items-center justify-center ${
-                  selectedSize === size
-                    ? "bg-black text-white"
-                    : "bg-white text-black"
-                }`}
+                className={`w-6 h-6 text-center flex items-center justify-center ${selectedSize === size
+                  ? "bg-black text-white"
+                  : "bg-white text-black"
+                  }`}
               >
                 {size.toUpperCase()}
               </div>
@@ -73,9 +72,8 @@ const ProductInteraction = ({product,selectedSize,selectedColor,}) => {
         <div className="flex items-center gap-2">
           {product.colors.map((color) => (
             <div
-              className={`cursor-pointer border-1 p-[2px] ${
-                selectedColor === color ? "border-gray-300" : "border-white"
-              }`}
+              className={`cursor-pointer border-1 p-[2px] ${selectedColor === color ? "border-gray-300" : "border-white"
+                }`}
               key={color}
               onClick={() => handleTypeChange("color", color)}
             >
@@ -116,6 +114,14 @@ const ProductInteraction = ({product,selectedSize,selectedColor,}) => {
         Buy this Item
       </button>
     </div>
+  );
+};
+
+const ProductInteraction = ({ product, selectedSize, selectedColor, }) => {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center mt-12">Loading Product...</div>}>
+      <ProductInteractionContent product={product} selectedSize={selectedSize} selectedColor={selectedColor} />
+    </Suspense>
   );
 };
 

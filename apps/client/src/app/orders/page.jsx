@@ -12,6 +12,9 @@ const fetchOrders = async () => {
       },
     }
   );
+  if (!res) {
+    return <div>data not found</div>
+  }
 
   const data = await res.json();
   return data;

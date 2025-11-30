@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Categories from "./Categories";
 import Filter from "./Filter";
 import ProductCard from "./ProductCard";
 import Link from "next/link";
 
-const ProductList = ({ params }) => {
+function ProductListContent({ params }) {
   const searchParams = useSearchParams();
   const category = searchParams.get("category") || "all";
   const sort = searchParams.get("sort") || "newest";
@@ -69,4 +69,9 @@ const ProductList = ({ params }) => {
   );
 };
 
+const ProductList = ({ params }) => {
+  <Suspense fallback={<div className="flex items-center justify-center mt-12">Loading Product List...</div>}>
+    <ProductListContent params={params} />
+  </Suspense>
+};
 export default ProductList;
