@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react'
-import {shippingFormSchema } from "@/types";
+import {shippingFormSchema } from "@/types/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";

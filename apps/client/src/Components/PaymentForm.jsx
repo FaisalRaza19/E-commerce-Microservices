@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react'
-import { paymentFormSchema } from "@/types";
+import { paymentFormSchema } from "@/types/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import Image from "next/image";
