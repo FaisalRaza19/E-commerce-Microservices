@@ -1,43 +1,45 @@
 FROM node:20.9.0-alpine AS base
 
 FROM base AS builder
-
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 RUN npm install -g turbo
 COPY . .
 
-RUN turbo prune --scope=client --scope=@repo/typescript-config --scope=@repo/eslint-config --docker
+RUN turbo prune --scope=client --docker
 
 FROM base AS installer
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
 
-WORKDIR /app/apps/client
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
 
-COPY --from=builder /app/out/json/apps/client/package.json ./package.json
-COPY --from=builder /app/out/full/apps/client/ .   
-COPY --from=builder /app/out/full/packages/typescript-config/ ../../packages/typescript-config/
+RUN npm install
 
-COPY apps/client/next.config.mjs ./
-COPY apps/client/jsconfig.json ./
+COPY --from=builder /app/out/full/ .
 
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA"
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA"
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
-RUN npm run build
+RUN npx turbo run build --filter=client
 
 FROM base AS runner
+WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
-USER nextjs
-
-WORKDIR /app/apps/client
 
 COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./.next/static
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./public
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/next.config.mjs ./
+COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
+COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
 
-CMD ["node", "server.js"]
+USER nextjs
+
+EXPOSE 3000
+
+CMD ["node", "apps/client/server.js"]
