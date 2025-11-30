@@ -14,13 +14,7 @@ FROM base AS installer
 WORKDIR /app/apps/client
 
 COPY --from=builder /app/out/json/apps/client/package.json ./package.json
-COPY --from=builder /app/out/package-lock.json ./package-lock.json
-COPY --from=builder /app/out/json/package.json ../../package.json
-COPY --from=builder /app/out/package-lock.json ../../package-lock.json
-
-RUN npm install
-
-COPY --from=builder /app/out/full/apps/client/ .
+COPY --from=builder /app/out/full/apps/client/ .   
 COPY --from=builder /app/out/full/packages/typescript-config/ ../../packages/typescript-config/
 
 COPY apps/client/next.config.mjs ./
