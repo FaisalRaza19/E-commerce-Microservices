@@ -24,7 +24,7 @@ COPY --from=builder /app/out/full/apps/client/ .
 COPY --from=builder /app/out/full/packages/typescript-config/ ../../packages/typescript-config/
 
 COPY apps/client/next.config.mjs ./
-COPY apps/client/tsconfig.json ./
+COPY apps/client/jsconfig.json ./
 
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA"
 
