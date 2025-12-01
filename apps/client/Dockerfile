@@ -13,24 +13,25 @@ COPY packages ./packages
 
 RUN turbo prune --scope=client --docker
 
-# Installer stage: install dependencies and build client
+# Installer stage
 FROM base AS installer
 WORKDIR /app
 
-# Copy pruned output from turbo-prune
+# Copy pruned output
 COPY --from=turbo-prune /app/out/json/ ./
 COPY --from=turbo-prune /app/out/package-lock.json ./package-lock.json
 COPY --from=turbo-prune /app/out/full/ ./
 
-# Install dependencies
+# Install dependencies for the whole workspace
 RUN npm install
 
-# Copy client source
-COPY apps/client/src ./apps/client/src
-
-# Build client
+# Switch to client directory before build
 WORKDIR /app/apps/client
-RUN npm run build
+# Copy client source code if needed
+COPY apps/client ./
+
+# Build client explicitly using webpack
+RUN npm run build -- --webpack
 
 # Runner stage: lightweight production image
 FROM node:20-alpine AS runner
