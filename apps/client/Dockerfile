@@ -25,7 +25,7 @@ COPY --from=builder /app/out/full/ .
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
-RUN npx turbo run build --filter=client
+RUN npx run buildt
 
 FROM base AS runner
 WORKDIR /app
