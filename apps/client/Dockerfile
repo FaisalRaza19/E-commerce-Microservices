@@ -1,4 +1,3 @@
-# Base image
 FROM node:20-alpine AS base
 
 FROM base AS turbo-prune
@@ -12,11 +11,9 @@ COPY packages ./packages
 
 RUN turbo prune --scope=client --docker
 
-# Installer stage
 FROM base AS installer
 WORKDIR /app
 
-# Copy pruned output
 COPY --from=turbo-prune /app/out/json/ ./
 COPY --from=turbo-prune /app/out/package-lock.json ./package-lock.json
 COPY --from=turbo-prune /app/out/full/ ./
@@ -25,7 +22,12 @@ RUN npm install
 
 WORKDIR /app/apps/client
 
-COPY apps/client ./
+COPY apps/client/public ./public
+COPY apps/client/src ./src
+COPY apps/client/next.config.mjs .
+COPY apps/client/postcss.config.mjs .
+COPY apps/client/jsconfig.json .
+COPY apps/client/eslint.config.mjs .
 
 RUN npm run build -- --webpack
 
