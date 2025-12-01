@@ -1,14 +1,17 @@
 import path from "path";
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
   output: "standalone",
 
-  turbopack: false,
+  transpilePackages: ["@repo/eslint-config", "@repo/typescript-config"],
 
   webpack: (config) => {
-    config.resolve.alias['@'] = path.resolve(__dirname, 'src');
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": path.resolve(process.cwd(), "src"),
+    };
+
     return config;
   },
 };
