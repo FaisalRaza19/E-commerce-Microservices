@@ -1,7 +1,6 @@
 # Base image
 FROM node:20-alpine AS base
 
-# Turbo-prune stage: prune monorepo for client
 FROM base AS turbo-prune
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
@@ -22,18 +21,14 @@ COPY --from=turbo-prune /app/out/json/ ./
 COPY --from=turbo-prune /app/out/package-lock.json ./package-lock.json
 COPY --from=turbo-prune /app/out/full/ ./
 
-# Install dependencies for the whole workspace
 RUN npm install
 
-# Switch to client directory before build
 WORKDIR /app/apps/client
-# Copy client source code if needed
-COPY apps/client/src .
 
-# Build client explicitly using webpack
+COPY apps/client ./
+
 RUN npm run build -- --webpack
 
-# Runner stage: lightweight production image
 FROM node:20-alpine AS runner
 WORKDIR /app
 
@@ -44,7 +39,6 @@ ENV PORT=3000
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy build output from installer
 COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
 COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
 COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
