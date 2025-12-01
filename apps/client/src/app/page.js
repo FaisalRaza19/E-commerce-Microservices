@@ -1,4 +1,4 @@
-import ProductList from "@/components/ProductList";
+import ProductList from "../components/ProductList.jsx";
 import Image from "next/image";
 
 const Homepage = async ({searchParams,}) => {
