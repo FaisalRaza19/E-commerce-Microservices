@@ -14,13 +14,14 @@ COPY packages ./packages
 RUN turbo prune --scope=client --docker
 
 # Installer stage: install dependencies and build client
-FROM base AS installer
+FROM node:20-alpine AS installer
+
 WORKDIR /app
 
 # Copy pruned output
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
-COPY --from=builder /app/out/package-lock.json ./package-lock.json
+COPY --from=installer /app/out/package-lock.json ./package-lock.json
 
 RUN npm install
 COPY --from=builder /app/out/full/ .
