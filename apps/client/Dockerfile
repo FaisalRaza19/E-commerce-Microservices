@@ -18,25 +18,19 @@ FROM base AS installer
 WORKDIR /app
 
 # Copy pruned output
-COPY --from=turbo-prune /app/out/json/ ./
-COPY --from=turbo-prune /app/out/package-lock.json ./package-lock.json
-COPY --from=turbo-prune /app/out/full/ ./
+COPY .gitignore .gitignore
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
 
-# Copy jsconfig.json into client folder
-COPY apps/client/jsconfig.json ./apps/client/jsconfig.json
-
-# Install dependencies
-RUN rm -f apps/client/package-lock.json
 RUN npm install
+COPY --from=builder /app/out/full/ .
 
-# Copy client src explicitly to ensure @ alias works
-COPY apps/client/src ./apps/client/src
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA" 
 
-# Build the client
 WORKDIR /app/apps/client
-RUN npm run build -- --webpack
+RUN npm run build
 
-# Runner stage: create lightweight production image
+# Runner stage
 FROM node:20-alpine AS runner
 WORKDIR /app
 
