@@ -25,6 +25,7 @@ RUN rm -f apps/client/package-lock.json
 RUN npm install
 
 COPY --from=turbo-prune /app/out/full/ ./
+COPY apps/client/src ./src
 
 WORKDIR /app/apps/client
 RUN npm run build -- --webpack
