@@ -13,12 +13,14 @@ COPY packages ./packages
 
 RUN turbo prune --scope=client --docker
 
-FROM base AS installer
+
+FROM node:20-alpine AS installer
 WORKDIR /app
-RUN apk add --no-cache libc6-compat
 
 COPY --from=turbo-prune /app/out/json/ ./
 COPY --from=turbo-prune /app/out/package-lock.json ./package-lock.json
+
+COPY jsconfig.json ./jsconfig.json
 
 RUN rm -f apps/client/package-lock.json
 
@@ -26,10 +28,6 @@ RUN npm install
 
 COPY --from=turbo-prune /app/out/full/ ./
 
-RUN echo "module.exports = { turbopack: false }" > apps/client/next.config.js
-
-# build
-RUN npm run build -w apps/client
 
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -49,4 +47,4 @@ USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/client/server.js"]
