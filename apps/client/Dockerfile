@@ -27,7 +27,7 @@ RUN npm install
 COPY --from=turbo-prune /app/out/full/ ./
 
 WORKDIR /app/apps/client
-RUN npm run build
+RUN npm run build -- --webpack
 
 FROM node:20-alpine AS runner
 WORKDIR /app
