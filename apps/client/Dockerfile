@@ -11,6 +11,7 @@ COPY package.json ./
 COPY package-lock.json ./
 COPY apps ./apps
 COPY packages ./packages
+COPY apps/client/jsconfig.json ./apps/client/jsconfig.json
 
 RUN turbo prune --scope=client --docker
 
