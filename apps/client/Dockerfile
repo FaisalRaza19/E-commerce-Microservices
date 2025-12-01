@@ -20,7 +20,7 @@ WORKDIR /app
 COPY --from=turbo-prune /app/out/json/ ./
 COPY --from=turbo-prune /app/out/package-lock.json ./package-lock.json
 
-COPY jsconfig.json ./jsconfig.json
+COPY apps/client/jsconfig.json ./jsconfig.json
 
 RUN rm -f apps/client/package-lock.json
 
