@@ -28,7 +28,7 @@ RUN npm install
 # Switch to client directory before build
 WORKDIR /app/apps/client
 # Copy client source code if needed
-COPY apps/client ./
+COPY apps/client/src .
 
 # Build client explicitly using webpack
 RUN npm run build -- --webpack
