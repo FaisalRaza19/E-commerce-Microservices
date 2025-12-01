@@ -1,35 +1,42 @@
+# Base image
 FROM node:20-alpine AS base
 
+# Turbo-prune stage: prune monorepo for client
 FROM base AS turbo-prune
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 RUN npm install -g turbo
 
-COPY turbo.json ./
-COPY package.json ./
-COPY package-lock.json ./
+COPY turbo.json package.json package-lock.json ./
 COPY apps ./apps
 COPY packages ./packages
 
 RUN turbo prune --scope=client --docker
 
+# Installer stage: install dependencies and build client
 FROM base AS installer
-
 WORKDIR /app
 
+# Copy pruned output
 COPY --from=turbo-prune /app/out/json/ ./
 COPY --from=turbo-prune /app/out/package-lock.json ./package-lock.json
-COPY apps/client/jsconfig.json ./jsconfig.json
+COPY --from=turbo-prune /app/out/full/ ./
 
+# Copy jsconfig.json into client folder
+COPY apps/client/jsconfig.json ./apps/client/jsconfig.json
+
+# Install dependencies
 RUN rm -f apps/client/package-lock.json
 RUN npm install
 
-COPY --from=turbo-prune /app/out/full/ ./
-COPY apps/client/src ./src
+# Copy client src explicitly to ensure @ alias works
+COPY apps/client/src ./apps/client/src
 
+# Build the client
 WORKDIR /app/apps/client
 RUN npm run build -- --webpack
 
+# Runner stage: create lightweight production image
 FROM node:20-alpine AS runner
 WORKDIR /app
 
@@ -40,12 +47,12 @@ ENV PORT=3000
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
+# Copy build output from installer
+COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/standalone ./ 
 COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
 COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
 
 USER nextjs
-
 EXPOSE 3000
 
 CMD ["node", "apps/client/server.js"]
