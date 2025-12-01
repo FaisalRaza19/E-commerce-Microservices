@@ -1,33 +1,40 @@
-FROM node:20.9.0-alpine AS base
+# Base image
+FROM node:20-alpine AS base
 
-FROM base AS builder
-RUN apk add --no-cache libc6-compat
+FROM base AS turbo-prune
 WORKDIR /app
+
 RUN npm install -g turbo
-COPY . .
+
+COPY turbo.json ./
+COPY package.json ./
+COPY package-lock.json ./
+COPY apps ./apps
+COPY packages ./packages
 
 RUN turbo prune --scope=client --docker
 
 FROM base AS installer
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY --from=builder /app/out/json/ .
-COPY --from=builder /app/out/package-lock.json ./package-lock.json
+RUN apk add --no-cache libc6-compat
 
-RUN rm -f apps/client/package-lock.json
+COPY --from=turbo-prune /app/out/json/ ./
+COPY --from=turbo-prune /app/out/package-lock.json ./package-lock.json
 
 RUN npm install
 
-COPY --from=builder /app/out/full/ .
+COPY --from=turbo-prune /app/out/full/ ./
 
-# Build args
+FROM installer AS builder
+WORKDIR /app
+
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
-RUN npx run build
+RUN npm run build -w apps/client
 
-FROM base AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -37,9 +44,9 @@ ENV PORT=3000
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
 
 USER nextjs
 
