@@ -23,7 +23,7 @@ RUN npm install
 WORKDIR /app/apps/client
 
 COPY apps/client/public ./public
-COPY apps/client/src ./src
+COPY apps/client/src ./
 COPY apps/client/next.config.mjs .
 COPY apps/client/postcss.config.mjs .
 COPY apps/client/jsconfig.json .
