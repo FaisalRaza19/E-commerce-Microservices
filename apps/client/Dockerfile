@@ -20,6 +20,8 @@ COPY --from=turbo-prune /app/out/full/ ./
 
 RUN npm install
 
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA"
+
 WORKDIR /app/apps/client
 
 COPY apps/client/public ./public
