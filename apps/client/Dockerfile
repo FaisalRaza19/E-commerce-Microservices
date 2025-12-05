@@ -25,8 +25,6 @@ WORKDIR /app/apps/client
 COPY apps/client/public ./public
 COPY apps/client/src ./src
 
-RUN ls -R src
-
 COPY apps/client/next.config.mjs .
 COPY apps/client/postcss.config.mjs .
 COPY apps/client/jsconfig.json .
