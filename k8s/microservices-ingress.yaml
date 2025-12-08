@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: microservices-ingress
+  namespace: microservices
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: dld-backend.duckdns.org
+      http:
+        paths:
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: admin
+                port:
+                  number: 80
+          - path: /client
+            pathType: Prefix
+            backend:
+              service:
+                name: client
+                port:
+                  number: 80
+          - path: /auth-service
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8003
+          - path: /order-service
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 8001
+          - path: /payment-service
+            pathType: Prefix
+            backend:
+              service:
+                name: payment-service
+                port:
+                  number: 8002
+          - path: /product-service
+            pathType: Prefix
+            backend:
+              service:
+                name: product-service
+                port:
+                  number: 8000
