@@ -35,6 +35,7 @@ jobs:
             echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           else
             echo "VERSION=sha-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          fi
 
       - name: Detect changed services or full build
         id: detect
