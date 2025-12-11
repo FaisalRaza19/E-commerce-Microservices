@@ -123,8 +123,8 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: "latest" 
-          
+          version: "latest"
+
       - name: Update kubeconfig for EKS
         run: |
           aws eks update-kubeconfig \
@@ -132,6 +132,21 @@ jobs:
             --region "${{ secrets.AWS_REGION }}"
           kubectl config current-context
 
+      - name: Apply Kubernetes Manifests
+        run: |
+          set -euxo pipefail
+          NAMESPACE=${{ env.K8S_NAMESPACE }}
+
+          # This assumes all your service YAMLs are in 'k8s-manifests/'
+          echo "Applying base manifests to namespace $NAMESPACE"
+          kubectl apply -f ./k8s-manifests/ --namespace "$NAMESPACE"
+
+          # This initial patch step ensures the current version is applied
+          for S in ${{ steps.detect.outputs.services }}; do
+            echo "Initial patch for deployment $S"
+            kubectl -n "$NAMESPACE" patch deployment/$S -p "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"$S\",\"image\":\"${{ env.ECR_REGISTRY }}/$S:${{ env.VERSION }}\"}]}}}}" || true
+          done
+          
       - name: Update Deployments & Rollout
         if: steps.detect.outputs.services != ''
         run: |
