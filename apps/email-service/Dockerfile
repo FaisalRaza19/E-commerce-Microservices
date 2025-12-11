@@ -24,4 +24,6 @@ USER nodejs
 
 COPY --from=installer /app .
 
+EXPOSE 8004
+
 CMD ["node", "apps/email-service/src/index.js"]

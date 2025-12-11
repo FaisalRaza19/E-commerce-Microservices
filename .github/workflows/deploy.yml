@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Enter image version/tag (e.g. v1.0.0)"
-        required: true
+        description: "Enter image version/tag (optional, e.g., v1.0.0). Leave blank to use commit SHA"
+        required: false
   push:
     branches:
       - main
@@ -29,24 +29,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      # FIX: Handle versioning for both Manual (input) and Push (commit SHA) events
       - name: Set VERSION variable
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ ! -z "${{ github.event.inputs.version }}" ]; then
             echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           else
-            # Use short commit hash as version for auto-pushes
             echo "VERSION=sha-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-          fi
 
-      - name: Detect changed services or fallback to full build
+      - name: Detect changed services or full build
         id: detect
         run: |
           set -euxo pipefail
-
-          # Ensure we have origin/main for comparison
-          git fetch origin main
-
+          git fetch origin main || true
           if git rev-parse --verify origin/main >/dev/null 2>&1; then
             BASE=$(git merge-base origin/main HEAD || true)
             CHANGED=$(git diff --name-only "$BASE" HEAD || true)
@@ -55,14 +49,9 @@ jobs:
           fi
 
           SERVICES=""
-
           if [ "$CHANGED" = "ALL" ] || [ -z "$CHANGED" ]; then
-            echo "⚠️ No diff detected or first run → FULL BUILD"
             SERVICES="client admin product-service auth-service order-service payment-service email-service"
           else
-            echo "Changed files:"
-            echo "$CHANGED"
-
             for FOLDER in apps/client apps/Admin apps/product-service apps/auth-service apps/order-service apps/payment-service apps/email-service; do
               if echo "$CHANGED" | grep -qE "^$FOLDER/"; then
                 SVC=$(basename "$FOLDER")
@@ -71,8 +60,6 @@ jobs:
               fi
             done
           fi
-
-          # Clean up whitespace
           SERVICES=$(echo $SERVICES | xargs)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
           echo "Detected services to build: $SERVICES"
@@ -87,16 +74,15 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & Push Changed Services
+      - name: Build & Push Docker Images
         if: steps.detect.outputs.services != ''
         run: |
           set -euxo pipefail
           VERSION=${{ env.VERSION }}
-          REGISTRY=${ECR_REGISTRY}
+          REGISTRY=${ECR_REGISTRY}}
           SERVICES="${{ steps.detect.outputs.services }}"
 
           for S in $SERVICES; do
-            echo "=== Building ${S} ==="
             case "$S" in
               client) DOCKERFILE="apps/client/Dockerfile";;
               admin) DOCKERFILE="apps/Admin/Dockerfile";;
@@ -105,21 +91,17 @@ jobs:
               order-service) DOCKERFILE="apps/order-service/Dockerfile";;
               payment-service) DOCKERFILE="apps/payment-service/Dockerfile";;
               email-service) DOCKERFILE="apps/email-service/Dockerfile";;
-              *) echo "Unknown service $S, skipping"; continue;;
+              *) continue;;
             esac
 
             IMAGE="$REGISTRY/$S:$VERSION"
-            echo "Building $S using $DOCKERFILE -> $IMAGE"
+            echo "Building $S -> $IMAGE"
 
             docker build -f "$DOCKERFILE" -t "$S:$VERSION" .
             docker tag "$S:$VERSION" "$IMAGE"
-            docker tag "$S:$VERSION" "$REGISTRY/$S:latest"
-
             docker push "$IMAGE"
-            docker push "$REGISTRY/$S:latest"
           done
 
-      # FIX: Use official reliable method to install kubectl
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
@@ -127,27 +109,10 @@ jobs:
 
       - name: Update kubeconfig for EKS
         run: |
-          aws eks update-kubeconfig \
-            --name "${{ secrets.EKS_CLUSTER_NAME }}" \
-            --region "${{ secrets.AWS_REGION }}"
+          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
           kubectl config current-context
 
-      - name: Apply Kubernetes Manifests
-        run: |
-          set -euxo pipefail
-          NAMESPACE=${{ env.K8S_NAMESPACE }}
-
-          # This assumes all your service YAMLs are in 'k8s-manifests/'
-          echo "Applying base manifests to namespace $NAMESPACE"
-          kubectl apply -f ./k8s-manifests/ --namespace "$NAMESPACE"
-
-          # This initial patch step ensures the current version is applied
-          for S in ${{ steps.detect.outputs.services }}; do
-            echo "Initial patch for deployment $S"
-            kubectl -n "$NAMESPACE" patch deployment/$S -p "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"$S\",\"image\":\"${{ env.ECR_REGISTRY }}/$S:${{ env.VERSION }}\"}]}}}}" || true
-          done
-          
-      - name: Update Deployments & Rollout
+      - name: Deploy to EKS
         if: steps.detect.outputs.services != ''
         run: |
           set -euxo pipefail
@@ -155,15 +120,15 @@ jobs:
           REGISTRY=${ECR_REGISTRY}
           NAMESPACE=${{ env.K8S_NAMESPACE }}
 
+          echo "Applying manifests..."
+          kubectl apply -f k8s/ -n "$NAMESPACE"
+
           for S in ${{ steps.detect.outputs.services }}; do
             IMAGE="$REGISTRY/$S:$VERSION"
-            echo "Updating deployment $S to image $IMAGE"
-
-            # REMOVED deprecated --record flag
-            # Ensure the deployment name matches the service name '$S'
+            echo "Updating deployment $S -> $IMAGE"
             kubectl -n "$NAMESPACE" set image deployment/$S $S="$IMAGE"
             kubectl -n "$NAMESPACE" rollout status deployment/$S --timeout=180s
           done
 
       - name: Done
-        run: echo "🎉 AWS EKS CI/CD completed successfully!"
+        run: echo "🎉 CI/CD pipeline completed!"
