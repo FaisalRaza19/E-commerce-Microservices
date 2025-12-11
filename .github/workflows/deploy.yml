@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Enter image version/tag (e.g. v12 or v1.0.0)"
+        description: "Enter image version/tag (e.g. v1.0.0)"
         required: true
   push:
     branches:
@@ -29,16 +29,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      # FIX: Handle versioning for both Manual (input) and Push (commit SHA) events
       - name: Set VERSION variable
         run: |
-          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          else
+            # Use short commit hash as version for auto-pushes
+            echo "VERSION=sha-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          fi
 
       - name: Detect changed services or fallback to full build
         id: detect
         run: |
           set -euxo pipefail
 
-          git fetch origin main --depth=1 || true
+          # Ensure we have origin/main for comparison
+          git fetch origin main
 
           if git rev-parse --verify origin/main >/dev/null 2>&1; then
             BASE=$(git merge-base origin/main HEAD || true)
@@ -50,7 +57,7 @@ jobs:
           SERVICES=""
 
           if [ "$CHANGED" = "ALL" ] || [ -z "$CHANGED" ]; then
-            echo "⚠️ No diff detected → FULL BUILD"
+            echo "⚠️ No diff detected or first run → FULL BUILD"
             SERVICES="client admin product-service auth-service order-service payment-service email-service"
           else
             echo "Changed files:"
@@ -65,7 +72,8 @@ jobs:
             done
           fi
 
-          SERVICES=$(echo $SERVICES)
+          # Clean up whitespace
+          SERVICES=$(echo $SERVICES | xargs)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
           echo "Detected services to build: $SERVICES"
 
@@ -111,13 +119,12 @@ jobs:
             docker push "$REGISTRY/$S:latest"
           done
 
-      - name: Install kubectl (AWS Recommended)
-        run: |
-          sudo curl -o /usr/local/bin/kubectl \
-            https://s3.amazonaws.com/amazon-eks/1.27.3/2023-07-07/bin/linux/amd64/kubectl
-          sudo chmod +x /usr/local/bin/kubectl
-          kubectl version --client
-
+      # FIX: Use official reliable method to install kubectl
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "latest" 
+          
       - name: Update kubeconfig for EKS
         run: |
           aws eks update-kubeconfig \
@@ -137,7 +144,9 @@ jobs:
             IMAGE="$REGISTRY/$S:$VERSION"
             echo "Updating deployment $S to image $IMAGE"
 
-            kubectl -n "$NAMESPACE" set image deployment/$S $S="$IMAGE" --record
+            # REMOVED deprecated --record flag
+            # Ensure the deployment name matches the service name '$S'
+            kubectl -n "$NAMESPACE" set image deployment/$S $S="$IMAGE"
             kubectl -n "$NAMESPACE" rollout status deployment/$S --timeout=180s
           done
 
