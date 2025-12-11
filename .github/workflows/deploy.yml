@@ -31,8 +31,9 @@ jobs:
 
       - name: Set VERSION variable
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ ! -z "${{ github.event.inputs.version }}" ]; then
-            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          VERSION_INPUT="${{ github.event.inputs.version }}"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ -n "$VERSION_INPUT" ]; then
+            echo "VERSION=$VERSION_INPUT" >> $GITHUB_ENV
           else
             echo "VERSION=sha-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           fi
@@ -80,7 +81,7 @@ jobs:
         run: |
           set -euxo pipefail
           VERSION=${{ env.VERSION }}
-          REGISTRY=${ECR_REGISTRY}}
+          REGISTRY=${ECR_REGISTRY}
           SERVICES="${{ steps.detect.outputs.services }}"
 
           for S in $SERVICES; do
@@ -121,15 +122,15 @@ jobs:
           REGISTRY=${ECR_REGISTRY}
           NAMESPACE=${{ env.K8S_NAMESPACE }}
 
-          echo "Applying manifests..."
+          echo "🚀 Applying base Kubernetes manifests..."
           kubectl apply -f k8s/ -n "$NAMESPACE"
 
           for S in ${{ steps.detect.outputs.services }}; do
             IMAGE="$REGISTRY/$S:$VERSION"
-            echo "Updating deployment $S -> $IMAGE"
+            echo "🔄 Updating deployment $S -> $IMAGE"
             kubectl -n "$NAMESPACE" set image deployment/$S $S="$IMAGE"
             kubectl -n "$NAMESPACE" rollout status deployment/$S --timeout=180s
           done
 
       - name: Done
-        run: echo "🎉 CI/CD pipeline completed!"
+        run: echo "🎉 CI/CD pipeline completed successfully!"
