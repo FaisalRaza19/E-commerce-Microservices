@@ -4,17 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Enter image version/tag (e.g. v12)'
+        description: "Enter image version/tag (e.g. v12 or v1.0.0)"
         required: true
-
   push:
     branches:
       - main
 
+concurrency:
+  group: ci-cd-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     env:
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -22,7 +24,7 @@ jobs:
       K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE || 'microservices' }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -31,67 +33,73 @@ jobs:
         run: |
           echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
 
-      # Detect Changed Services 
       - name: Detect changed services or fallback to full build
         id: detect
         run: |
+          set -euxo pipefail
+
+          # fetch main ref to compare; ignore failures for first-run cases
           git fetch origin main --depth=1 || true
 
-          # Check if main branch exists (first runs won’t have it)
           if git rev-parse --verify origin/main >/dev/null 2>&1; then
-            BASE=$(git merge-base origin/main HEAD)
+            BASE=$(git merge-base origin/main HEAD || true)
             CHANGED=$(git diff --name-only "$BASE" HEAD || true)
           else
-            # First‐time CI/CD run → Force full build
             CHANGED="ALL"
           fi
 
           SERVICES=""
 
-          if [ "$CHANGED" = "ALL" ] || [ "$CHANGED" = "" ]; then
-            echo "⚠️ No changed files detected → FULL BUILD TRIGGERED"
+          if [ "$CHANGED" = "ALL" ] || [ -z "$CHANGED" ]; then
+            echo "⚠️ No diff detected (first run or empty diff) → FULL BUILD"
             SERVICES="client admin product-service auth-service order-service payment-service email-service"
           else
             echo "Changed files:"
             echo "$CHANGED"
 
             for FOLDER in apps/client apps/Admin apps/product-service apps/auth-service apps/order-service apps/payment-service apps/email-service; do
-              if echo "$CHANGED" | grep -q "^$FOLDER/"; then
-                SVC=$(basename $FOLDER)
-
-                # normalize Admin → admin
+              if echo "$CHANGED" | grep -qE "^$FOLDER/"; then
+                SVC=$(basename "$FOLDER")
                 [[ "$SVC" == "Admin" ]] && SVC="admin"
-
                 SERVICES="$SERVICES $SVC"
               fi
             done
           fi
 
+          # normalize whitespace
+          SERVICES=$(echo $SERVICES)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
           echo "Detected services to build: $SERVICES"
 
-      # AWS Login
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to ECR
+      - name: Ensure aws CLI present
+        run: |
+          if ! command -v aws >/dev/null 2>&1; then
+            echo "aws not found, installing"
+            sudo apt-get update -y
+            sudo apt-get install -y awscli
+          fi
+          aws --version
+
+      - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Build & Push Docker Images
       - name: Build & Push Changed Services
         if: steps.detect.outputs.services != ''
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           VERSION=${{ env.VERSION }}
           REGISTRY=${ECR_REGISTRY}
           SERVICES="${{ steps.detect.outputs.services }}"
 
           for S in $SERVICES; do
-            echo "=== 🚀 Building $S ==="
+            echo "=== Building ${S} ==="
             case "$S" in
               client) DOCKERFILE="apps/client/Dockerfile";;
               admin) DOCKERFILE="apps/Admin/Dockerfile";;
@@ -100,43 +108,48 @@ jobs:
               order-service) DOCKERFILE="apps/order-service/Dockerfile";;
               payment-service) DOCKERFILE="apps/payment-service/Dockerfile";;
               email-service) DOCKERFILE="apps/email-service/Dockerfile";;
-              *) echo "Unknown service $S"; continue;;
+              *) echo "Unknown service $S, skipping"; continue;;
             esac
 
             IMAGE="$REGISTRY/$S:$VERSION"
+            echo "Building $S from $DOCKERFILE -> $IMAGE"
 
-            docker build -f $DOCKERFILE -t $S:$VERSION .
-            docker tag $S:$VERSION $IMAGE
-            docker tag $S:$VERSION $REGISTRY/$S:latest
+            docker build -f "$DOCKERFILE" -t "$S:$VERSION" .
+            docker tag "$S:$VERSION" "$IMAGE"
+            docker tag "$S:$VERSION" "$REGISTRY/$S:latest"
 
-            docker push $IMAGE
-            docker push $REGISTRY/$S:latest
+            docker push "$IMAGE"
+            docker push "$REGISTRY/$S:latest"
           done
 
-      # Configure kubectl
-      - name: Configure kubectl for EKS
-        uses: aws-actions/eks-kubectl@v2
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
         with:
-          cluster-name: ${{ secrets.EKS_CLUSTER_NAME }}
-          region: ${{ secrets.AWS_REGION }}
-          kubectl-version: '1.27.3'
+          version: "1.27.3"
 
-      # Rollout Updated Services to EKS
-      - name: Update Kubernetes deployments
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig --name "${{ secrets.EKS_CLUSTER_NAME }}" --region "${{ secrets.AWS_REGION }}"
+          kubectl config current-context
+
+      - name: Update Kubernetes deployments and wait for rollout
         if: steps.detect.outputs.services != ''
         run: |
+          set -euxo pipefail
           VERSION=${{ env.VERSION }}
           REGISTRY=${ECR_REGISTRY}
           NAMESPACE=${{ env.K8S_NAMESPACE }}
 
           for S in ${{ steps.detect.outputs.services }}; do
             IMAGE="$REGISTRY/$S:$VERSION"
-            echo "🔄 Rolling out deployment/$S with image $IMAGE"
-
-            kubectl -n "$NAMESPACE" set image deployment/$S $S=$IMAGE --record
-
+            echo "🔄 Updating deployment/$S -> $IMAGE"
+            kubectl -n "$NAMESPACE" set image deployment/$S $S="$IMAGE" --record || {
+              echo "Failed to set image for deployment/$S — see kubectl get deployment -n $NAMESPACE $S"
+              kubectl -n "$NAMESPACE" get deployment/$S -o yaml || true
+              exit 1
+            }
             kubectl -n "$NAMESPACE" rollout status deployment/$S --timeout=180s
           done
 
-      - name: Finish
-        run: echo "🎉 All changed services deployed successfully!"
+      - name: Done
+        run: echo "🎉 Build & deploy finished."
