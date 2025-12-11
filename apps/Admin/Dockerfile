@@ -35,4 +35,6 @@ COPY --from=installer --chown=nextjs:nodejs /app/apps/Admin/.next/standalone ./
 COPY --from=installer --chown=nextjs:nodejs /app/apps/Admin/.next/static ./apps/Admin/.next/static
 COPY --from=installer --chown=nextjs:nodejs /app/apps/Admin/public ./apps/Admin/public
 
+EXPOSE 3001
+
 CMD ["node", "apps/Admin/server.js"]

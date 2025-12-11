@@ -1,18 +1,76 @@
-name: Build & Push to ECR
+name: CI/CD Deploy to EKS
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Enter image version/tag (e.g. v12)'
+        required: true
+
   push:
     branches:
       - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    env:
+      ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+      K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE || 'microservices' }}
 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set VERSION variable
+        run: |
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+
+      # Detect Changed Services 
+      - name: Detect changed services or fallback to full build
+        id: detect
+        run: |
+          git fetch origin main --depth=1 || true
+
+          # Check if main branch exists (first runs won’t have it)
+          if git rev-parse --verify origin/main >/dev/null 2>&1; then
+            BASE=$(git merge-base origin/main HEAD)
+            CHANGED=$(git diff --name-only "$BASE" HEAD || true)
+          else
+            # First‐time CI/CD run → Force full build
+            CHANGED="ALL"
+          fi
+
+          SERVICES=""
+
+          if [ "$CHANGED" = "ALL" ] || [ "$CHANGED" = "" ]; then
+            echo "⚠️ No changed files detected → FULL BUILD TRIGGERED"
+            SERVICES="client admin product-service auth-service order-service payment-service email-service"
+          else
+            echo "Changed files:"
+            echo "$CHANGED"
+
+            for FOLDER in apps/client apps/Admin apps/product-service apps/auth-service apps/order-service apps/payment-service apps/email-service; do
+              if echo "$CHANGED" | grep -q "^$FOLDER/"; then
+                SVC=$(basename $FOLDER)
+
+                # normalize Admin → admin
+                [[ "$SVC" == "Admin" ]] && SVC="admin"
+
+                SERVICES="$SERVICES $SVC"
+              fi
+            done
+          fi
+
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+          echo "Detected services to build: $SERVICES"
+
+      # AWS Login
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -20,54 +78,65 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # CLIENT APP
-      - name: Build & Push Client App
+      # Build & Push Docker Images
+      - name: Build & Push Changed Services
+        if: steps.detect.outputs.services != ''
         run: |
-          docker build -f apps/client/Dockerfile -t client .
-          docker tag client:latest ${{ secrets.ECR_REGISTRY }}/client:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/client:latest
+          set -euo pipefail
+          VERSION=${{ env.VERSION }}
+          REGISTRY=${ECR_REGISTRY}
+          SERVICES="${{ steps.detect.outputs.services }}"
 
-      # ADMIN APP
-      - name: Build & Push Admin App
-        run: |
-          docker build -f apps/Admin/Dockerfile -t admin .
-          docker tag admin:latest ${{ secrets.ECR_REGISTRY }}/admin:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/admin:latest
+          for S in $SERVICES; do
+            echo "=== 🚀 Building $S ==="
+            case "$S" in
+              client) DOCKERFILE="apps/client/Dockerfile";;
+              admin) DOCKERFILE="apps/Admin/Dockerfile";;
+              product-service) DOCKERFILE="apps/product-service/Dockerfile";;
+              auth-service) DOCKERFILE="apps/auth-service/Dockerfile";;
+              order-service) DOCKERFILE="apps/order-service/Dockerfile";;
+              payment-service) DOCKERFILE="apps/payment-service/Dockerfile";;
+              email-service) DOCKERFILE="apps/email-service/Dockerfile";;
+              *) echo "Unknown service $S"; continue;;
+            esac
 
-      # PRODUCT SERVICE
-      - name: Build & Push Product Service
-        run: |
-          docker build -f apps/product-service/Dockerfile -t product-service .
-          docker tag product-service:latest ${{ secrets.ECR_REGISTRY }}/product-service:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/product-service:latest
+            IMAGE="$REGISTRY/$S:$VERSION"
 
-      # AUTH SERVICE
-      - name: Build & Push Auth Service
-        run: |
-          docker build -f apps/auth-service/Dockerfile -t auth-service .
-          docker tag auth-service:latest ${{ secrets.ECR_REGISTRY }}/auth-service:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/auth-service:latest
+            docker build -f $DOCKERFILE -t $S:$VERSION .
+            docker tag $S:$VERSION $IMAGE
+            docker tag $S:$VERSION $REGISTRY/$S:latest
 
-      # ORDER SERVICE
-      - name: Build & Push Order Service
-        run: |
-          docker build -f apps/order-service/Dockerfile -t order-service .
-          docker tag order-service:latest ${{ secrets.ECR_REGISTRY }}/order-service:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/order-service:latest
+            docker push $IMAGE
+            docker push $REGISTRY/$S:latest
+          done
 
-      # PAYMENT SERVICE
-      - name: Build & Push Payment Service
-        run: |
-          docker build -f apps/payment-service/Dockerfile -t payment-service .
-          docker tag payment-service:latest ${{ secrets.ECR_REGISTRY }}/payment-service:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/payment-service:latest
+      # Configure kubectl
+      - name: Configure kubectl for EKS
+        uses: aws-actions/eks-kubectl@v2
+        with:
+          cluster-name: ${{ secrets.EKS_CLUSTER_NAME }}
+          region: ${{ secrets.AWS_REGION }}
+          kubectl-version: '1.27.3'
 
-      # EMAIL SERVICE
-      - name: Build & Push Email Service
+      # Rollout Updated Services to EKS
+      - name: Update Kubernetes deployments
+        if: steps.detect.outputs.services != ''
         run: |
-          docker build -f apps/email-service/Dockerfile -t email-service .
-          docker tag email-service:latest ${{ secrets.ECR_REGISTRY }}/email-service:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/email-service:latest
+          VERSION=${{ env.VERSION }}
+          REGISTRY=${ECR_REGISTRY}
+          NAMESPACE=${{ env.K8S_NAMESPACE }}
+
+          for S in ${{ steps.detect.outputs.services }}; do
+            IMAGE="$REGISTRY/$S:$VERSION"
+            echo "🔄 Rolling out deployment/$S with image $IMAGE"
+
+            kubectl -n "$NAMESPACE" set image deployment/$S $S=$IMAGE --record
+
+            kubectl -n "$NAMESPACE" rollout status deployment/$S --timeout=180s
+          done
+
+      - name: Finish
+        run: echo "🎉 All changed services deployed successfully!"
