@@ -35,4 +35,8 @@ COPY --from=installer --chown=nextjs:nodejs /app/apps/Admin/.next/standalone ./
 COPY --from=installer --chown=nextjs:nodejs /app/apps/Admin/.next/static ./apps/Admin/.next/static
 COPY --from=installer --chown=nextjs:nodejs /app/apps/Admin/public ./apps/Admin/public
 
+ENV PORT=3001
+ENV HOST=0.0.0.0
+
+EXPOSE 3001
 CMD ["node", "apps/Admin/server.js"]

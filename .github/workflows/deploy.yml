@@ -1,14 +1,16 @@
-name: CI/CD Deploy to EKS
+name: CI/CD Build Image to ECR
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Enter image version/tag (optional, e.g., v1.0.0). Leave blank to use commit SHA"
+        description: "Enter image version/tag (optional, e.g., v1.0.0)."
         required: false
   push:
     branches:
       - main
+    paths-ignore:
+      - 'k8s/**'
 
 concurrency:
   group: ci-cd-deploy-${{ github.ref }}
@@ -107,41 +109,6 @@ jobs:
             # also update latest tag (optional but convenient)
             docker tag "$S:$VERSION" "$LATEST" || true
             docker push "$LATEST" || true
-          done
-
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: "latest"
-
-      - name: Update kubeconfig for EKS
-        run: |
-          aws eks update-kubeconfig --name "${{ secrets.EKS_CLUSTER_NAME }}" --region "${{ secrets.AWS_REGION }}"
-          kubectl config current-context
-
-      - name: Deploy to EKS
-        if: steps.detect.outputs.services != ''
-        run: |
-          set -euxo pipefail
-          VERSION=${{ env.VERSION }}
-          REGISTRY=${ECR_REGISTRY}
-          NAMESPACE=${{ env.K8S_NAMESPACE }}
-
-          echo "🚀 Applying base Kubernetes manifests..."
-          # apply manifests (manifests must have valid placeholder images, see notes)
-          kubectl apply -f k8s/ -n "$NAMESPACE"
-
-          for S in ${{ steps.detect.outputs.services }}; do
-            IMAGE="$REGISTRY/$S:$VERSION"
-            echo "🔄 Updating deployment $S -> $IMAGE"
-            kubectl -n "$NAMESPACE" set image deployment/$S $S="$IMAGE"
-            kubectl -n "$NAMESPACE" rollout status deployment/$S --timeout=180s || {
-              echo "Rollout failed or timed out for $S, printing status and pod info"
-              kubectl -n "$NAMESPACE" describe deployment/$S || true
-              kubectl -n "$NAMESPACE" get pods -l app=$S -o wide || true
-              kubectl -n "$NAMESPACE" get events --sort-by='.metadata.creationTimestamp' -o wide || true
-              exit 1
-            }
           done
 
       - name: Done
