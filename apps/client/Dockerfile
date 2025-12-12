@@ -49,6 +49,5 @@ COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./apps
 COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
 
 USER nextjs
-EXPOSE 3000
 
 CMD ["node", "apps/client/server.js"]
