@@ -97,11 +97,16 @@ jobs:
             esac
 
             IMAGE="$REGISTRY/$S:$VERSION"
-            echo "Building $S -> $IMAGE"
+            LATEST="$REGISTRY/$S:latest"
 
+            echo "Building $S -> $IMAGE"
             docker build -f "$DOCKERFILE" -t "$S:$VERSION" .
             docker tag "$S:$VERSION" "$IMAGE"
+            # push version tag
             docker push "$IMAGE"
+            # also update latest tag (optional but convenient)
+            docker tag "$S:$VERSION" "$LATEST" || true
+            docker push "$LATEST" || true
           done
 
       - name: Install kubectl
@@ -111,7 +116,7 @@ jobs:
 
       - name: Update kubeconfig for EKS
         run: |
-          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+          aws eks update-kubeconfig --name "${{ secrets.EKS_CLUSTER_NAME }}" --region "${{ secrets.AWS_REGION }}"
           kubectl config current-context
 
       - name: Deploy to EKS
@@ -123,13 +128,20 @@ jobs:
           NAMESPACE=${{ env.K8S_NAMESPACE }}
 
           echo "🚀 Applying base Kubernetes manifests..."
+          # apply manifests (manifests must have valid placeholder images, see notes)
           kubectl apply -f k8s/ -n "$NAMESPACE"
 
           for S in ${{ steps.detect.outputs.services }}; do
             IMAGE="$REGISTRY/$S:$VERSION"
             echo "🔄 Updating deployment $S -> $IMAGE"
             kubectl -n "$NAMESPACE" set image deployment/$S $S="$IMAGE"
-            kubectl -n "$NAMESPACE" rollout status deployment/$S --timeout=180s
+            kubectl -n "$NAMESPACE" rollout status deployment/$S --timeout=180s || {
+              echo "Rollout failed or timed out for $S, printing status and pod info"
+              kubectl -n "$NAMESPACE" describe deployment/$S || true
+              kubectl -n "$NAMESPACE" get pods -l app=$S -o wide || true
+              kubectl -n "$NAMESPACE" get events --sort-by='.metadata.creationTimestamp' -o wide || true
+              exit 1
+            }
           done
 
       - name: Done
