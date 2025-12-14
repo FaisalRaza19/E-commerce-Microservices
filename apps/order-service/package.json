@@ -1,6 +1,7 @@
 {
   "name": "order-service",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "type": "module",
   "description": "",
   "main": "src/index.js",
   "scripts": {
@@ -11,7 +12,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "devDependencies": {
     "@repo/eslint-config": "*",
     "@repo/typescript-config": "*"
