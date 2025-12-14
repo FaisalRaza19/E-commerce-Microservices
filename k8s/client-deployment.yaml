@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: client
-          image: REPLACE_ME
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/client@sha256:c3f7f4ff77fa433cc60806d3ce52b35976387876bd44ae495f59b11281781406
           ports:
             - containerPort: 3000
           env:
@@ -83,4 +83,4 @@ spec:
     - protocol: TCP
       port: 3000
       targetPort: 3000
-  type: ClusterIP
+  type: LoadBalancer

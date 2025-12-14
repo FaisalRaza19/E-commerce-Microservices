@@ -1,11 +1,10 @@
 import { Kafka, logLevel } from "kafkajs";
 
-const brokers = ["localhost:9092", "localhost:9093", "localhost:9094"];
-
 export const kafkaClient = (serviceName) => {
   if (!serviceName) {
     throw new Error("A serviceName (clientId) must be provided for Kafka client.");
   }
+  const brokers = process.env.KAFKA_BROKERS ? process.env.KAFKA_BROKERS.split(",") : ["localhost:9092", "localhost:9093", "localhost:9094"];
 
   return new Kafka({
     clientId: serviceName,

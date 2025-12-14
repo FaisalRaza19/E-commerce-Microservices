@@ -17,10 +17,12 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: REPLACE_ME
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/auth-service@sha256:e4af7cf880d523e5bf7cc6f10fc2271ce030ec9731e6a440b8191dfdb142ed51
           ports:
             - containerPort: 8003
           env:
+            - name: KAFKA_BROKERS
+              value: kafka.kafka.svc.cluster.local:9092,kafka.kafka.svc.cluster.local:9093,kafka.kafka.svc.cluster.local:9094
             - name: PORT
               valueFrom:
                 secretKeyRef:
@@ -62,4 +64,4 @@ spec:
     - protocol: TCP
       port: 8003
       targetPort: 8003
-  type: ClusterIP
+  type: LoadBalancer
