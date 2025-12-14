@@ -1,4 +1,5 @@
-import {getAuth} from "@clerk/fastify";
+import pkg from '@clerk/fastify';
+const { getAuth } = pkg;
 
 export const userAuth = async (req, res) => {
   const { userId } = getAuth(req);
