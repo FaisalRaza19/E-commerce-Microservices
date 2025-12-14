@@ -4,8 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Enter image version/tag (optional, e.g., v1.0.0)."
+        description: "Enter image version/tag (optional, e.g., v1.0.0). If empty, a SHA tag is used."
         required: false
+      build_all:
+        description: "Set to 'true' to force building ALL service images."
+        type: boolean
+        default: false
+  
   push:
     branches:
       - main
@@ -13,17 +18,17 @@ on:
       - 'k8s/**'
 
 concurrency:
-  group: ci-cd-deploy-${{ github.ref }}
+  group: ci-cd-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
+    
     env:
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
-      EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
-      K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE || 'microservices' }}
+      ALL_SERVICES: "client admin product-service auth-service order-service payment-service email-service"
 
     steps:
       - name: Checkout repository
@@ -31,62 +36,113 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set VERSION variable
+      - name: Set VERSION and TAG_LATEST variables
+        id: set_version
         run: |
+          # 1. Determine the image tag (VERSION)
           VERSION_INPUT="${{ github.event.inputs.version }}"
+          VERSION_TAG=""
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ -n "$VERSION_INPUT" ]; then
-            echo "VERSION=$VERSION_INPUT" >> $GITHUB_ENV
+            VERSION_TAG="$VERSION_INPUT"
           else
-            echo "VERSION=sha-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+            # Default to short SHA for automated pushes or manual without tag
+            VERSION_TAG="sha-$(git rev-parse --short HEAD)"
           fi
+          echo "VERSION=$VERSION_TAG" >> $GITHUB_ENV
+          
+          # 2. Determine if the 'latest' tag should also be pushed (for initial/full builds)
+          # We push 'latest' if it's an initial push to main or if 'build_all' is manually set.
+          TAG_LATEST=false
+          if [ "${{ github.event.inputs.build_all }}" = "true" ]; then
+              TAG_LATEST=true
+              echo "INFO: Manual build_all=true detected. Latest tag will be pushed for all built services."
+          fi
+          
+          echo "TAG_LATEST=$TAG_LATEST" >> $GITHUB_ENV
+          echo "VERSION_TAG: $VERSION_TAG"
 
       - name: Detect changed services or full build
         id: detect
         run: |
           set -euxo pipefail
-          git fetch origin main || true
+          
+          # Use the variable from the environment
+          ALL_SERVICES_LIST="${{ env.ALL_SERVICES }}"
+          
+          # Determine the base commit for comparison
+          BASE_COMMIT=""
+          CHANGED_FILES=""
+          
+          # Try to fetch and find merge-base only if origin/main exists
           if git rev-parse --verify origin/main >/dev/null 2>&1; then
-            BASE=$(git merge-base origin/main HEAD || true)
-            CHANGED=$(git diff --name-only "$BASE" HEAD || true)
-          else
-            CHANGED="ALL"
+            BASE_COMMIT=$(git merge-base origin/main HEAD || true)
+            # Compare with origin/main (or the base if it exists)
+            CHANGED_FILES=$(git diff --name-only "$BASE_COMMIT" HEAD || true)
           fi
-
-          SERVICES=""
-          if [ "$CHANGED" = "ALL" ] || [ -z "$CHANGED" ]; then
-            SERVICES="client admin product-service auth-service order-service payment-service email-service"
-          else
-            for FOLDER in apps/client apps/Admin apps/product-service apps/auth-service apps/order-service apps/payment-service apps/email-service; do
-              if echo "$CHANGED" | grep -qE "^$FOLDER/"; then
-                SVC=$(basename "$FOLDER")
-                [[ "$SVC" == "Admin" ]] && SVC="admin"
-                SERVICES="$SERVICES $SVC"
+          
+          SERVICES_TO_BUILD=""
+          
+          # Case 1: Initial push (no origin/main or no base) OR Manual 'build_all' requested
+          if [ -z "$BASE_COMMIT" ] || [ "${{ github.event.inputs.build_all }}" = "true" ]; then
+            SERVICES_TO_BUILD="$ALL_SERVICES_LIST"
+            echo "INFO: Performing full build (initial push or build_all=true)."
+            # Override TAG_LATEST to true for full build scenarios
+            echo "TAG_LATEST=true" >> $GITHUB_ENV
+          
+          # Case 2: Standard push with history, check for changes
+          elif [ -n "$CHANGED_FILES" ]; then
+            echo "Changes detected since $BASE_COMMIT:"
+            echo "$CHANGED_FILES"
+            
+            # Map the service folders to their names (case-insensitive mapping for 'admin')
+            for SVC_NAME in $ALL_SERVICES_LIST; do
+              # Map the service name to its folder path
+              FOLDER_PATH=""
+              case "$SVC_NAME" in
+                client) FOLDER_PATH="apps/client";;
+                admin) FOLDER_PATH="apps/Admin";; # Note the 'Admin' folder name in the path
+                product-service) FOLDER_PATH="apps/product-service";;
+                auth-service) FOLDER_PATH="apps/auth-service";;
+                order-service) FOLDER_PATH="apps/order-service";;
+                payment-service) FOLDER_PATH="apps/payment-service";;
+                email-service) FOLDER_PATH="apps/email-service";;
+              esac
+              
+              # Check if any changed file is within the service folder
+              if echo "$CHANGED_FILES" | grep -qE "^$FOLDER_PATH/"; then
+                SERVICES_TO_BUILD="$SERVICES_TO_BUILD $SVC_NAME"
               fi
             done
           fi
-          SERVICES=$(echo $SERVICES | xargs)
-          echo "services=$SERVICES" >> $GITHUB_OUTPUT
-          echo "Detected services to build: $SERVICES"
+          
+          SERVICES_TO_BUILD=$(echo $SERVICES_TO_BUILD | xargs) # Clean up whitespace
+          
+          echo "services=$SERVICES_TO_BUILD" >> $GITHUB_OUTPUT
+          echo "Detected services to build: $SERVICES_TO_BUILD"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
-
+        
       - name: Build & Push Docker Images
         if: steps.detect.outputs.services != ''
         run: |
           set -euxo pipefail
+          
           VERSION=${{ env.VERSION }}
           REGISTRY=${ECR_REGISTRY}
           SERVICES="${{ steps.detect.outputs.services }}"
+          SHOULD_TAG_LATEST="${{ env.TAG_LATEST }}"
 
           for S in $SERVICES; do
+            # Map service name to its Dockerfile path (must match the detect step)
+            DOCKERFILE=""
             case "$S" in
               client) DOCKERFILE="apps/client/Dockerfile";;
               admin) DOCKERFILE="apps/Admin/Dockerfile";;
@@ -98,17 +154,30 @@ jobs:
               *) continue;;
             esac
 
-            IMAGE="$REGISTRY/$S:$VERSION"
-            LATEST="$REGISTRY/$S:latest"
+            # 1. Define the unique image tag and ECR path
+            VERSION_IMAGE="$REGISTRY/$S:$VERSION"
 
-            echo "Building $S -> $IMAGE"
+            echo "🚀 Building service: $S"
+            echo "   Dockerfile: $DOCKERFILE"
+            echo "   Tag: $VERSION"
+            
+            # 2. Build the image (using current directory '.' as context)
             docker build -f "$DOCKERFILE" -t "$S:$VERSION" .
-            docker tag "$S:$VERSION" "$IMAGE"
-            # push version tag
-            docker push "$IMAGE"
-            # also update latest tag (optional but convenient)
-            docker tag "$S:$VERSION" "$LATEST" || true
-            docker push "$LATEST" || true
+            
+            # 3. Tag and Push the unique version tag
+            docker tag "$S:$VERSION" "$VERSION_IMAGE"
+            echo "   Pushing $VERSION_IMAGE"
+            docker push "$VERSION_IMAGE"
+            
+            # 4. Conditionally Tag and Push the 'latest' tag
+            if [ "$SHOULD_TAG_LATEST" = "true" ]; then
+              LATEST_IMAGE="$REGISTRY/$S:latest"
+              echo "   Also tagging and pushing $LATEST_IMAGE (Full/Initial Build)."
+              docker tag "$S:$VERSION" "$LATEST_IMAGE"
+              docker push "$LATEST_IMAGE"
+            fi
+            
+            echo "✅ Build and Push for $S completed."
           done
 
       - name: Done
