@@ -17,10 +17,13 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: REPLACE_ME
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service:sha-4431775
           ports:
             - containerPort: 8001
           env:
+            - name: KAFKA_BROKERS
+              value: kafka-broker-1.kafka.svc.cluster.local:9092,kafka-broker-2.kafka.svc.cluster.local:9093,kafka-broker-3.kafka.svc.cluster.local:9094
+
             - name: PORT
               value: "8001"
             - name: CLERK_PUBLISHABLE_KEY
@@ -64,4 +67,4 @@ spec:
     - protocol: TCP
       port: 8001
       targetPort: 8001
-  type: ClusterIP
+  type: LoadBalancer

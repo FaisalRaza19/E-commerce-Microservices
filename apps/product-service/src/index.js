@@ -18,6 +18,14 @@ app.use(
   })
 );
 
+app.get("/health", async (req,res) => {
+    return res.status(200).json({
+        status: "ok",
+        uptime: process.uptime(),
+        timestamp: Date.now(),
+    });
+});
+
 app.get("/test", userAuth, (req, res) => {
     return res.json({ message: "Product service authenticated", userId: req?.userId })
 })

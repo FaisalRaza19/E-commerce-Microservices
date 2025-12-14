@@ -17,10 +17,13 @@ spec:
     spec:
       containers:
         - name: email-service
-          image: REPLACE_ME
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/email-service:sha-4431775
           ports:
             - containerPort: 8004
           env:
+            - name: KAFKA_BROKERS
+              value: kafka-broker-1.kafka.svc.cluster.local:9092,kafka-broker-2.kafka.svc.cluster.local:9093,kafka-broker-3.kafka.svc.cluster.local:9094
+
             - name: GOOGLE_CLIENT_ID
               valueFrom:
                 secretKeyRef:

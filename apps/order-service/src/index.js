@@ -12,6 +12,14 @@ fastify.register(clerkPlugin)
 
 fastify.register(orderRoute);
 
+fastify.get("/health", async (request, reply) => {
+    reply.code(200).send({
+        status: "ok",
+        uptime: process.uptime(),
+        timestamp: Date.now(),
+    });
+});
+
 fastify.get("/test", { preHandler: userAuth }, (req, res) => {
     return res.send({ message: "order service authenticated", userId: req.userId })
 })

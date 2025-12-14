@@ -15,6 +15,14 @@ app.use("*", cors({ origin: ["http://localhost:3000"] }));
 app.route("/sessions", sessionRoute);
 app.route("/webhooks", webhookRoute);
 
+app.get("/health", async (c) => {
+    return c.json({
+        status: "ok",
+        uptime: process.uptime(),
+        timestamp: Date.now(),
+    });
+});
+
 // testing purpose
 app.post("/create-product", async (c) => {
   try {
@@ -44,6 +52,7 @@ app.post("/create-product", async (c) => {
     return c.json({ error: err.message || "Something went wrong" }, 500);
   }
 });
+
 
 
 app.get('/', (c) => {

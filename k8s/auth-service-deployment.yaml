@@ -17,12 +17,13 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/auth-service@sha256:e4af7cf880d523e5bf7cc6f10fc2271ce030ec9731e6a440b8191dfdb142ed51
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/auth-service:sha-4431775
           ports:
             - containerPort: 8003
           env:
             - name: KAFKA_BROKERS
-              value: kafka.kafka.svc.cluster.local:9092,kafka.kafka.svc.cluster.local:9093,kafka.kafka.svc.cluster.local:9094
+              value: kafka-broker-1.kafka.svc.cluster.local:9092,kafka-broker-2.kafka.svc.cluster.local:9093,kafka-broker-3.kafka.svc.cluster.local:9094
+
             - name: PORT
               valueFrom:
                 secretKeyRef:
@@ -40,13 +41,13 @@ spec:
                   key: CLERK_SECRET_KEY
           readinessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 8003
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 8003
             initialDelaySeconds: 30
             periodSeconds: 20
