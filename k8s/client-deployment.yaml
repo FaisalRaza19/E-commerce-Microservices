@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: client
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/client@sha256:c3f7f4ff77fa433cc60806d3ce52b35976387876bd44ae495f59b11281781406
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/client@sha256:5489dbae4571d2b7025a5156c6631c0d1270f95af71a3caa4428ec711331a8d2
           ports:
             - containerPort: 3000
           env:

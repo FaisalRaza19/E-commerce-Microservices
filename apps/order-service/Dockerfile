@@ -29,5 +29,9 @@ USER fastifyjs
 # Copy all pruned and installed files from the installer stage
 COPY --from=installer /app .
 
+ENV PORT=8001
+ENV HOST=0.0.0.0
+
+EXPOSE 8001
 # Start the Fastify application
 CMD ["node", "apps/order-service/src/index.js"]

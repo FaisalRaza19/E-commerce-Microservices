@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service:sha-7f8015d
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service@sha256:a99d8653bc9f25cc70f39101890ddcd35a022312609ea24d1d79eecc9ef85d6a
           ports:
             - containerPort: 8001
           env:
@@ -43,13 +43,13 @@ spec:
                   key: MONGO_URL
           readinessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 8001
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 8001
             initialDelaySeconds: 30
             periodSeconds: 20

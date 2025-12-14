@@ -1,5 +1,5 @@
 import Fastify from "fastify"
-import plugin from '@clerk/fastify'
+import {clerkPlugin} from '@clerk/fastify'
 
 import { userAuth } from "./middleware/auth_middleware.js";
 import { connectOrderDB } from "@repo/order-db";
@@ -8,7 +8,6 @@ import { consumer, producer} from "./utils/kafka.js";
 import { runKafkaSubscriptions } from "./utils/subscription.js";
 const fastify = Fastify();
 
-const {clerkPlugin} = plugin
 fastify.register(clerkPlugin)
 
 fastify.register(orderRoute);

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: email-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/email-service:sha-4431775
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/email-service@sha256:54764fb83277e4b271d007c2780f69af5edac02cdbacaab0ba010cc97dbf620e
           ports:
             - containerPort: 8004
           env:
