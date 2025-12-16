@@ -24,6 +24,8 @@ RUN npm ci
 # Copy the source code
 COPY --from=builder /app/out/full/ .
 
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA
+
 # Build the project
 RUN npx turbo run build --filter=client
 

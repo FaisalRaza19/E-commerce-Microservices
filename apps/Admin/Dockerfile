@@ -9,7 +9,7 @@ WORKDIR /app
 RUN npm install -g turbo
 COPY . .
 
-RUN turbo prune --scope=Admin --docker 
+RUN turbo prune --scope=admin --docker 
 
 # 2. Install dependencies & Build
 FROM base AS installer
@@ -24,8 +24,10 @@ RUN npm ci
 # Copy the source code
 COPY --from=builder /app/out/full/ .
 
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA
+
 # Build the project
-RUN npx turbo run build --filter=Admin
+RUN npx turbo run build --filter=admin
 
 # 3. Production Runner
 FROM base AS runner

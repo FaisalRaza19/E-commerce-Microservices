@@ -1,7 +1,6 @@
-# apps/payment-service/Dockerfile
 FROM node:20-alpine AS base
 
-# 1. Prune
+# 1. Prune the workspace
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
@@ -10,12 +9,10 @@ COPY . .
 
 RUN turbo prune --scope=payment-service --docker
 
-# 2. Install & Build
+# 2. Install Dependencies
 FROM base AS installer
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
-# OpenSSL is required for Prisma Client
-RUN apk add --no-cache openssl
 
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/package-lock.json ./package-lock.json
@@ -25,19 +22,19 @@ COPY --from=builder /app/out/full/ .
 
 RUN npx turbo run build --filter=payment-service
 
-# 3. Runner
+# 4. Production Runner
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache openssl
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nodejs
-USER nodejs
+# Create a non-root user for security
+RUN addgroup --system --gid 1001 expressjs
+RUN adduser --system --uid 1001 expressjs
+USER expressjs
 
-COPY --from=installer --chown=nodejs:nodejs /app .
+# Copy the application code from the installer stage
+COPY --from=installer --chown=expressjs:expressjs /app .
 
 EXPOSE 8002
 
-# Start script
 CMD ["node", "apps/payment-service/src/index.js"]

@@ -2,8 +2,8 @@
   "name": "payment-service",
   "type": "module",
   "scripts": {
-    "dev": "tsx --env-file=.env  --watch ./src/index.js",
-    "build": "tsc",
+    "dev": "node --env-file=.env  --watch ./src/index.js",
+    "build": "echo 'No build step for JS service'",
     "start": "node ./src/index.js",
     "check-types": "echo 'No TypeScript found, skipping type check'"
   },
@@ -16,7 +16,6 @@
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
-    "tsx": "^4.20.6"
+    "@repo/typescript-config": "*"
   }
 }
