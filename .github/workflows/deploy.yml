@@ -1,105 +1,123 @@
-name: CI/CD Build Image to ECR
+name: Deploy Microservices
 
 on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
   workflow_dispatch:
     inputs:
-      version:
-        description: "Enter image version/tag (optional, e.g., v1.0.0). If empty, a SHA tag is used."
-        required: false
-      build_all:
-        description: "Set to 'true' to force building ALL service images."
-        type: boolean
+      force_build_all:
+        description: 'Force build ALL services regardless of changes?'
+        required: true
         default: false
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "k8s/**"
+        type: boolean
 
-concurrency:
-  group: ci-cd-build-${{ github.ref }}
-  cancel-in-progress: true
+env:
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  IMAGE_TAG: 1.0.${{ github.run_number }}
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  build-and-push:
+  # JOB 1: Detect which folders changed
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      admin: ${{ steps.filter.outputs.admin }}
+      client: ${{ steps.filter.outputs.client }}
+      auth: ${{ steps.filter.outputs.auth }}
+      email: ${{ steps.filter.outputs.email }}
+      order: ${{ steps.filter.outputs.order }}
+      payment: ${{ steps.filter.outputs.payment }}
+      product: ${{ steps.filter.outputs.product }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          admin:
+            - 'apps/Admin/**'
+            - 'packages/**'
+          client:
+            - 'apps/client/**'
+            - 'packages/**'
+          auth:
+            - 'apps/auth-service/**'
+            - 'packages/**'
+          email:
+            - 'apps/email-service/**'
+            - 'packages/**'
+          order:
+            - 'apps/order-service/**'
+            - 'packages/**'
+          payment:
+            - 'apps/payment-service/**'
+            - 'packages/**'
+          product:
+            - 'apps/product-service/**'
+            - 'packages/**'
 
-    env:
-      ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      ALL_SERVICES: "client admin product-service auth-service order-service payment-service email-service"
+  # JOB 2: Build and Push Images
+  build-and-push:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: admin
+            context: apps/Admin
+            ecr_repo: admin 
+            port: 3001
+          - service: client
+            context: apps/client
+            ecr_repo: client
+            port: 3000
+          - service: auth
+            context: apps/auth-service
+            ecr_repo: auth-service
+            port: 8003
+          - service: email
+            context: apps/email-service
+            ecr_repo: email-service
+            port: 8004
+          - service: order
+            context: apps/order-service
+            ecr_repo: order-service
+            port: 8001
+          - service: payment
+            context: apps/payment-service
+            ecr_repo: payment-service
+            port: 8002
+          - service: product
+            context: apps/product-service
+            ecr_repo: product-service
+            port: 8000
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # full history is required for git diff
 
-      - name: Set VERSION and TAG_LATEST
-        id: set_version
+      # Logic: Run build if (Changed == 'true') OR (Force Build == 'true')
+      - name: Should Build?
+        id: check
         run: |
-          VERSION_INPUT="${{ github.event.inputs.version }}"
-          VERSION_TAG=""
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ -n "$VERSION_INPUT" ]; then
-            VERSION_TAG="$VERSION_INPUT"
+          if [[ "${{ needs.detect-changes.outputs[matrix.service] }}" == "true" ]] || [[ "${{ inputs.force_build_all }}" == "true" ]]; then
+            echo "build=true" >> $GITHUB_OUTPUT
           else
-            VERSION_TAG="sha-$(git rev-parse --short HEAD)"
-          fi
-          echo "VERSION=$VERSION_TAG" >> $GITHUB_ENV
-
-          TAG_LATEST=false
-          if [ "${{ github.event.inputs.build_all }}" = "true" ]; then
-              TAG_LATEST=true
-          fi
-          echo "TAG_LATEST=$TAG_LATEST" >> $GITHUB_ENV
-          echo "VERSION_TAG: $VERSION_TAG"
-
-      - name: Detect changed services
-        id: detect
-        run: |
-          set -euxo pipefail
-          ALL_SERVICES_LIST="${{ env.ALL_SERVICES }}"
-          BASE_COMMIT=""
-          CHANGED_FILES=""
-
-          # Ensure origin/main exists
-          git fetch origin main
-
-          if git rev-parse --verify origin/main >/dev/null 2>&1; then
-            BASE_COMMIT=$(git merge-base origin/main HEAD)
-            CHANGED_FILES=$(git diff --name-only "$BASE_COMMIT" HEAD)
+            echo "build=false" >> $GITHUB_OUTPUT
           fi
 
-          SERVICES_TO_BUILD=""
-
-          # Full build if build_all=true or initial push
-          if [ -z "$BASE_COMMIT" ] || [ "${{ github.event.inputs.build_all }}" = "true" ]; then
-            SERVICES_TO_BUILD="$ALL_SERVICES_LIST"
-            echo "TAG_LATEST=true" >> $GITHUB_ENV
-          else
-            for SVC_NAME in $ALL_SERVICES_LIST; do
-              case "$SVC_NAME" in
-                client) FOLDER="apps/client";;
-                admin) FOLDER="apps/Admin";;
-                product-service) FOLDER="apps/product-service";;
-                auth-service) FOLDER="apps/auth-service";;
-                order-service) FOLDER="apps/order-service";;
-                payment-service) FOLDER="apps/payment-service";;
-                email-service) FOLDER="apps/email-service";;
-                *) continue;;
-              esac
-
-              if echo "$CHANGED_FILES" | grep -qE "^$FOLDER/"; then
-                SERVICES_TO_BUILD="$SERVICES_TO_BUILD $SVC_NAME"
-              fi
-            done
-          fi
-
-          SERVICES_TO_BUILD=$(echo $SERVICES_TO_BUILD | xargs)
-          echo "services=$SERVICES_TO_BUILD" >> $GITHUB_OUTPUT
-          echo "Detected services to build: $SERVICES_TO_BUILD"
-
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
+        if: steps.check.outputs.build == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -107,47 +125,24 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
+        if: steps.check.outputs.build == 'true'
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & Push Docker Images
-        if: steps.detect.outputs.services != ''
+      - name: Build, tag, and push image to Amazon ECR
+        if: steps.check.outputs.build == 'true'
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ matrix.ecr_repo }}
         run: |
-          set -euxo pipefail
-          VERSION=${{ env.VERSION }}
-          REGISTRY=${ECR_REGISTRY}
-          SERVICES="${{ steps.detect.outputs.services }}"
-          SHOULD_TAG_LATEST="${{ env.TAG_LATEST }}"
-
-          for S in $SERVICES; do
-            case "$S" in
-              client) DOCKERFILE="apps/client/Dockerfile";;
-              admin) DOCKERFILE="apps/Admin/Dockerfile";;
-              product-service) DOCKERFILE="apps/product-service/Dockerfile";;
-              auth-service) DOCKERFILE="apps/auth-service/Dockerfile";;
-              order-service) DOCKERFILE="apps/order-service/Dockerfile";;
-              payment-service) DOCKERFILE="apps/payment-service/Dockerfile";;
-              email-service) DOCKERFILE="apps/email-service/Dockerfile";;
-              *) continue;;
-            esac
-
-            VERSION_IMAGE="$REGISTRY/$S:$VERSION"
-
-            echo "🚀 Building service: $S"
-            echo "   Dockerfile: $DOCKERFILE"
-            echo "   Tag: $VERSION"
-
-            docker build -f "$DOCKERFILE" -t "$S:$VERSION" .
-            docker tag "$S:$VERSION" "$VERSION_IMAGE"
-            docker push "$VERSION_IMAGE"
-
-            if [ "$SHOULD_TAG_LATEST" = "true" ]; then
-              LATEST_IMAGE="$REGISTRY/$S:latest"
-              docker tag "$S:$VERSION" "$LATEST_IMAGE"
-              docker push "$LATEST_IMAGE"
-            fi
-
-            echo "✅ Build and Push for $S completed."
-          done
-
-      - name: Done
-        run: echo "🎉 CI/CD pipeline completed successfully!"
+          # Build using the specific Dockerfile inside the apps folder, but context is Root (.)
+          docker build \
+            -f ${{ matrix.context }}/Dockerfile \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            .
+          
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+          echo "::notice::Pushed $ECR_REPOSITORY:$IMAGE_TAG"

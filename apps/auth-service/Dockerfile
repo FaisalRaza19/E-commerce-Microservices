@@ -1,29 +1,38 @@
-FROM node:18-alpine AS base
+# apps/auth-service/Dockerfile
+FROM node:20-alpine AS base
 
+# 1. Prune
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 RUN npm install -g turbo
 COPY . .
-# Prune the workspace for this specific app
-RUN turbo prune auth-service --docker
 
+RUN turbo prune --scope=auth-service --docker
+
+# 2. Install & Setup
 FROM base AS installer
 WORKDIR /app
-COPY .gitignore .gitignore
+RUN apk add --no-cache libc6-compat
+
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/package-lock.json ./package-lock.json
-RUN npm install
+RUN npm ci
 
 COPY --from=builder /app/out/full/ .
-RUN npx turbo run build --filter=auth-service...
 
+# 3. Runner
 FROM base AS runner
 WORKDIR /app
-RUN addgroup --system --gid 1001 nodejs
+ENV NODE_ENV=production
+
+# Create a non-root user
+RUN addgroup --system --gid 1001 expressjs
 RUN adduser --system --uid 1001 expressjs
 USER expressjs
 
-COPY --from=installer /app .
+COPY --from=installer --chown=expressjs:expressjs /app .
+
+EXPOSE 8003 
 
 CMD ["node", "apps/auth-service/src/index.js"]

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service@sha256:e90d315dcb2232bc336fd0dee999bfbae58ed8d43babe1470654350bddc6c56f
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service@sha256:01dbe89d64d008a14f83cfd9a1a949c4e50e90af5877f29f3f9e8c69529a74a6
           ports:
             - containerPort: 8001
           env:

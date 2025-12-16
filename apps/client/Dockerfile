@@ -1,55 +1,48 @@
+# apps/client/Dockerfile
 FROM node:20-alpine AS base
 
-FROM base AS turbo-prune
-WORKDIR /app
+# 1. Prune the workspace (Isolate only this app)
+FROM base AS builder
+
 RUN apk add --no-cache libc6-compat
+WORKDIR /app
 RUN npm install -g turbo
+COPY . .
 
-COPY turbo.json package.json package-lock.json ./
-COPY apps ./apps
-COPY packages ./packages
+RUN turbo prune --scope=client --docker 
 
-RUN turbo prune --scope=client --docker
-
+# 2. Install dependencies & Build
 FROM base AS installer
 WORKDIR /app
+RUN apk add --no-cache libc6-compat
 
-COPY --from=turbo-prune /app/out/json/ ./
-COPY --from=turbo-prune /app/out/package-lock.json ./package-lock.json
-COPY --from=turbo-prune /app/out/full/ ./
+# Copy the pruned lockfile and package.json
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
+RUN npm ci
 
-RUN npm install
+# Copy the source code
+COPY --from=builder /app/out/full/ .
 
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA"
+# Build the project
+RUN npx turbo run build --filter=client
 
-WORKDIR /app/apps/client
-
-COPY apps/client/public ./public
-COPY apps/client/src ./src
-
-COPY apps/client/next.config.mjs .
-COPY apps/client/postcss.config.mjs .
-COPY apps/client/jsconfig.json .
-COPY apps/client/eslint.config.mjs .
-
-RUN npm run build -- --webpack
-
-FROM node:20-alpine AS runner
+# 3. Production Runner
+FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
+ENV NODE_ENV=Production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
-
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
-COPY --from=installer --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
-
 USER nextjs
-ENV HOST=0.0.0.0
+
+COPY --from=installer /app/apps/client/.next/standalone ./
+COPY --from=installer /app/apps/client/.next/static ./apps/client/.next/static
+COPY --from=installer /app/apps/client/public ./apps/client/public
 
 EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
 CMD ["node", "apps/client/server.js"]

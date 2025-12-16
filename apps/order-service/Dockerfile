@@ -1,37 +1,38 @@
-FROM node:18-alpine AS base
+# apps/order-service/Dockerfile
+FROM node:20-alpine AS base
 
+# 1. Prune
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 RUN npm install -g turbo
 COPY . .
-# Prune the workspace for the order-service
-RUN turbo prune order-service --docker
 
+RUN turbo prune --scope=order-service --docker
+
+# 2. Install & Setup
 FROM base AS installer
 WORKDIR /app
-COPY .gitignore .gitignore
+RUN apk add --no-cache libc6-compat
+
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/package-lock.json ./package-lock.json
-RUN npm install
+RUN npm ci
 
 COPY --from=builder /app/out/full/ .
 
-WORKDIR /app
-
+# 3. Runner
 FROM base AS runner
 WORKDIR /app
-# Use a non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 fastifyjs
-USER fastifyjs
+ENV NODE_ENV=production
 
-# Copy all pruned and installed files from the installer stage
-COPY --from=installer /app .
+# Create a non-root user
+RUN addgroup --system --gid 1001 expressjs
+RUN adduser --system --uid 1001 expressjs
+USER expressjs
 
-ENV PORT=8001
-ENV HOST=0.0.0.0
+COPY --from=installer --chown=expressjs:expressjs /app .
 
 EXPOSE 8001
-# Start the Fastify application
+
 CMD ["node", "apps/order-service/src/index.js"]
