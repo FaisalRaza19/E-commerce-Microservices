@@ -18,7 +18,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: product-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/product-service@sha256:8c18a9bb936964cdc2819c837c2bfd5c8661fa5b3c9f97c779decba5dad623ce
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/product-service@sha256:7bb8a0d3ec88177c9ae360e9fff916608346474a80c2595d49d07208b2772304
           env:
             - name: PORT   # FIX: Explicitly set the port for the Node app
               value: "3000"
@@ -118,7 +118,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: payment-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/payment-service@sha256:67d2ad7a53cf1e3d3a089d36bc634e44afd5004b3276f79ab35eef02fee8fa02
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/payment-service@sha256:8bca33fbd9cd722d477e5dc64210e57b4bb78140ea14ef85e100a65f86beb881
           env:
             - name: PORT
               value: "3000"
@@ -167,7 +167,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: auth-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/auth-service@sha256:034951d04d1bf3451cc71816ca7dbd60b2ca6a00cd98eaed175263cc8715ec10
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/auth-service@sha256:0bae14d8b3f4a50d834a908830af5c53089ebb986ea11ba14e408f178b6557e9
           env:
             - name: PORT
               value: "3000"

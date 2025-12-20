@@ -10,7 +10,6 @@ import { runKafkaSubscriptions } from './utils/subscription.js';
 const app = new Hono()
 
 app.use("*", clerkMiddleware());
-import { cors } from "hono/cors";
 
 const allowedOrigins = process.env.CORS_URL ? process.env.CORS_URL.split(",").map((url) => url.trim()) : [];
 
