@@ -115,7 +115,7 @@ const AddUser = () => {
                         onChange={(e) => {
                           const emails = e.target.value
                             .split(",")
-                            .map((email) => email.trim())
+                            ?.map((email) => email.trim())
                             .filter((email) => email);
                           field.onChange(emails);
                         }}

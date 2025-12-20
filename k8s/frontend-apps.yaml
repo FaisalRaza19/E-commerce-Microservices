@@ -18,7 +18,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: admin
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/admin@sha256:2e7145cd94812c06e28f9ba757076d961cc18d87ffffd289198fadd7231c7f4b
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/admin@sha256:473e6be12b449d0c4007035ce2643dd8a3efb8645eefc5c9f4aecd97acb6881b
           envFrom:
             - secretRef:
                 name: app-secrets

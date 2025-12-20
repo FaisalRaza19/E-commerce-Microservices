@@ -31,7 +31,7 @@ const CardList = async ({ title }) => {
       <h1 className="text-lg font-medium mb-6">{title}</h1>
       <div className="flex flex-col gap-2">
         {title === "Popular Products"
-          ? products.map((item) => (
+          ? products?.map((item) => (
             <Card
               key={item.id}
               className="flex-row items-center justify-between gap-4 p-4"
@@ -55,7 +55,7 @@ const CardList = async ({ title }) => {
               <CardFooter className="p-0">${item.price}K</CardFooter>
             </Card>
           ))
-          : orders.map((item) => (
+          : orders?.map((item) => (
             <Card
               key={item._id}
               className="flex-row items-center justify-between gap-4 p-4"

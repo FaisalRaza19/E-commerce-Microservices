@@ -169,7 +169,7 @@ const AddProduct = () => {
                               <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
                             <SelectContent>
-                              {data.map((cat) => (
+                              {data?.map((cat) => (
                                 <SelectItem key={cat.id} value={cat.slug}>
                                   {cat.name}
                                 </SelectItem>
@@ -193,7 +193,7 @@ const AddProduct = () => {
                       <FormLabel>Sizes</FormLabel>
                       <FormControl>
                         <div className="grid grid-cols-3 gap-4 my-2">
-                          {sizes.map((size) => (
+                          {sizes?.map((size) => (
                             <div className="flex items-center gap-2" key={size}>
                               <Checkbox
                                 id="size"
@@ -232,7 +232,7 @@ const AddProduct = () => {
                       <FormControl>
                         <div className="space-y-4">
                           <div className="grid grid-cols-3 gap-4 my-2">
-                            {colors.map((color) => (
+                            {colors?.map((color) => (
                               <div
                                 className="flex items-center gap-2"
                                 key={color}
