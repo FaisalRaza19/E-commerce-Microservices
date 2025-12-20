@@ -1,16 +1,11 @@
-# .dockerignore
-node_modules
-**/**/node_modules
 .git
-.turbo
-.next
+.gitignore
+node_modules
+**/node_modules
 dist
-build
-npm-debug.log
-yarn-error.log
-.env
-.env.*
-!.env.example
-**/.git
+.next
 out
 coverage
+*.log
+.env
+.DS_Store

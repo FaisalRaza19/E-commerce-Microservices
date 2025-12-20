@@ -1,15 +1,33 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Service
 metadata:
-  name: zookeeper-1
+  name: zookeeper-headless
   namespace: kafka
   labels:
     app: zookeeper
 spec:
-  replicas: 1
+  ports:
+    - port: 2181
+      name: client
+    - port: 2888
+      name: peer
+    - port: 3888
+      name: leader-election
+  clusterIP: None
+  selector:
+    app: zookeeper
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: kafka
+spec:
   selector:
     matchLabels:
       app: zookeeper
+  serviceName: zookeeper-headless
+  replicas: 1
   template:
     metadata:
       labels:
@@ -20,22 +38,56 @@ spec:
           image: confluentinc/cp-zookeeper:7.7.7
           ports:
             - containerPort: 2181
+            - containerPort: 2888
+            - containerPort: 3888
           env:
             - name: ZOOKEEPER_CLIENT_PORT
               value: "2181"
-            - name: ZOOKEEPER_SERVER_ID
-              value: "1"
-            - name: ZOOKEEPER_SERVERS
-              value: "zookeeper-1:2888:3888"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: zookeeper-1
-  namespace: kafka
-spec:
-  ports:
-    - port: 2181
-      targetPort: 2181
-  selector:
-    app: zookeeper
+            - name: ZOOKEEPER_TICK_TIME
+              value: "2000"
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xmx512M -Xms512M"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          # FIXED: Wrapped command in /bin/sh to handle pipe and ensure arguments are strings
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "echo ruok | nc 127.0.0.1 2181"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "echo ruok | nc 127.0.0.1 2181"
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          volumeMounts:
+            - name: zoolog
+              mountPath: /var/lib/zookeeper/log
+            - name: zoodata
+              mountPath: /var/lib/zookeeper/data
+  volumeClaimTemplates:
+    - metadata:
+        name: zoodata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
+    - metadata:
+        name: zoolog
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi

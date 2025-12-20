@@ -23,6 +23,8 @@ RUN npm ci
 
 COPY --from=builder /app/out/full/ .
 
+RUN npx prisma generate --schema=packages/product-database/prisma/schema.prisma
+
 RUN npx turbo run build --filter=product-service
 
 # 3. Runner
