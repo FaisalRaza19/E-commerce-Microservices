@@ -10,7 +10,20 @@ import { runKafkaSubscriptions } from './utils/subscription.js';
 const app = new Hono()
 
 app.use("*", clerkMiddleware());
-app.use("*", cors({ origin: ["http://localhost:3000"] }));
+import { cors } from "hono/cors";
+
+const allowedOrigins = process.env.CORS_URL ? process.env.CORS_URL.split(",").map((url) => url.trim()) : [];
+
+app.use(
+  cors({
+    origin: (origin) => {
+      if (!origin) return true;
+
+      return allowedOrigins.includes(origin);
+    },
+    credentials: true,
+  })
+);
 
 app.route("/sessions", sessionRoute);
 app.route("/webhooks", webhookRoute);

@@ -3,7 +3,7 @@ import { clerkMiddleware } from '@clerk/express'
 import { userAuth } from "./middleware/auth_middleware.js"
 import productRouter from "./routes/product.route.js";
 import categoryRouter from "./routes/category.route.js";
-import { producer} from "./utils/kafka.js";
+import { producer } from "./utils/kafka.js";
 import cors from "cors"
 
 const app = express()
@@ -11,14 +11,23 @@ const app = express()
 app.use(clerkMiddleware())
 
 app.use(express.json());
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
-    credentials: true,
-  })
-);
+const allowedOrigins = process.env.CORS_URL ? process.env.CORS_URL.split(",").map((url) => url.trim()) : [];
 
-app.get("/health", async (req,res) => {
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            return callback(new Error("Not allowed by CORS"));
+        },
+        credentials: true,
+    })
+);
+app.get("/health", async (req, res) => {
     return res.status(200).json({
         status: "ok",
         uptime: process.uptime(),

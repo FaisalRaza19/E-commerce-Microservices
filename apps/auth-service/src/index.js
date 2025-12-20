@@ -6,12 +6,23 @@ import userRoute from "./routes/user.route.js";
 import { producer } from "./utils/kafka.js";
 
 const app = express();
+const allowedOrigins = process.env.CORS_URL ? process.env.CORS_URL.split(",").map((url) => url.trim()) : [];
+
 app.use(
     cors({
-        origin: ["http://localhost:3001"],
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            return callback(new Error("Not allowed by CORS"));
+        },
         credentials: true,
     })
 );
+
 app.use(express.json());
 app.use(clerkMiddleware());
 
