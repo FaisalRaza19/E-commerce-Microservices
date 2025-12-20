@@ -1,3 +1,4 @@
+# --- ADMIN APP ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,16 +16,6 @@ spec:
     spec:
       imagePullSecrets:
         - name: ecr-secret
-      # FORCE TO WORKER NODE
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - ip-172-31-31-194
       containers:
         - name: admin
           image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/admin@sha256:2e7145cd94812c06e28f9ba757076d961cc18d87ffffd289198fadd7231c7f4b
@@ -32,14 +23,15 @@ spec:
             - secretRef:
                 name: app-secrets
           env:
+            # FIX: Point to Public IP + NodePorts
             - name: NEXT_PUBLIC_PRODUCT_SERVICE_URL
-              value: "http://172.31.18.115:8000"
+              value: "http://13.62.136.49:30000"
             - name: NEXT_PUBLIC_ORDER_SERVICE_URL
-              value: "http://172.31.18.115:8001"
+              value: "http://13.62.136.49:30001"
             - name: NEXT_PUBLIC_PAYMENT_SERVICE_URL
-              value: "http://172.31.31.194:8002"
+              value: "http://13.62.136.49:30002"
             - name: NEXT_PUBLIC_AUTH_SERVICE_URL
-              value: "http://172.31.18.115:8003"
+              value: "http://13.62.136.49:30003"
           ports:
             - containerPort: 3000
           resources:
@@ -52,14 +44,16 @@ metadata:
   name: admin
   namespace: microservices
 spec:
-  type: LoadBalancer
-  ports:
-    - port: 3001 # EXTERNAL PORT
-      targetPort: 3001
+  type: NodePort # FIX: NodePort for external access
   selector:
     app: admin
+  ports:
+    - protocol: TCP
+      port: 3001 # Cluster Port
+      targetPort: 3001
+      nodePort: 30005
 
-# --- CLIENT APP (Port 3000) ---
+# --- CLIENT APP ---
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -78,16 +72,6 @@ spec:
     spec:
       imagePullSecrets:
         - name: ecr-secret
-      # FORCE TO WORKER NODE
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - ip-172-31-31-194
       containers:
         - name: client
           image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/client@sha256:fc63e576882bc095fde84ed30731b1e3fcf5604857069019911be51163a8bb5f
@@ -95,16 +79,17 @@ spec:
             - secretRef:
                 name: app-secrets
           env:
+            # FIX: Point to Public IP + NodePorts
             - name: NEXT_PUBLIC_PRODUCT_SERVICE_URL
-              value: "http://172.31.18.115:8000"
+              value: "http://13.62.136.49:30000"
             - name: NEXT_PUBLIC_ORDER_SERVICE_URL
-              value: "http://172.31.18.115:8001"
+              value: "http://13.62.136.49:30001"
             - name: NEXT_PUBLIC_PAYMENT_SERVICE_URL
-              value: "http://172.31.31.194:8002"
+              value: "http://13.62.136.49:30002"
             - name: NEXT_PUBLIC_AUTH_SERVICE_URL
-              value: "http://172.31.18.115:8003"
+              value: "http://13.62.136.49:30003"
           ports:
-            - containerPort: 3000
+            - containerPort: 3001
           resources:
             requests: { memory: "150Mi", cpu: "200m" }
             limits: { memory: "300Mi", cpu: "800m" }
@@ -115,9 +100,11 @@ metadata:
   name: client
   namespace: microservices
 spec:
-  type: LoadBalancer
-  ports:
-    - port: 3000 
-      targetPort: 3000
+  type: NodePort
   selector:
     app: client
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      nodePort: 30004 # EXTERNAL ACCESS PORT

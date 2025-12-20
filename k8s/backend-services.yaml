@@ -67,7 +67,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: order-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service@sha256:df79b865c4a6fc8f319522186f494a358e7e30b4e1e90ac84a9856059f618a83
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service@sha256:212bf0df77c2b42523bc783355d80d4dd969262523bbe7c9ba79278448b2b51c
           env:
             - name: PORT
               value: "3000"

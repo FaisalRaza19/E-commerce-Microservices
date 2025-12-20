@@ -38,7 +38,7 @@ const DataTable = ({ columns, data, }) => {
             const selectedRows = table.getSelectedRowModel().rows;
 
             Promise.all(
-                selectedRows.map(async (row) => {
+                selectedRows?.map(async (row) => {
                     const userId = (row.original).id;
                     const res = await fetch(
                         `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users/${userId}`,
@@ -77,9 +77,9 @@ const DataTable = ({ columns, data, }) => {
             )}
             <Table>
                 <TableHeader>
-                    {table.getHeaderGroups().map((headerGroup) => (
+                    {table.getHeaderGroups()?.map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => {
+                            {headerGroup.headers?.map((header) => {
                                 return (
                                     <TableHead key={header.id}>
                                         {header.isPlaceholder
@@ -96,12 +96,12 @@ const DataTable = ({ columns, data, }) => {
                 </TableHeader>
                 <TableBody>
                     {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
+                        table.getRowModel().rows?.map((row) => (
                             <TableRow
                                 key={row.id}
                                 data-state={row.getIsSelected() && "selected"}
                             >
-                                {row.getVisibleCells().map((cell) => (
+                                {row.getVisibleCells()?.map((cell) => (
                                     <TableCell key={cell.id}>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </TableCell>
