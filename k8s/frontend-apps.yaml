@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin
+  template:
+    metadata:
+      labels:
+        app: admin
+    spec:
+      imagePullSecrets:
+        - name: ecr-secret
+      # FORCE TO WORKER NODE
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ip-172-31-31-194
+      containers:
+        - name: admin
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/admin@sha256:2e7145cd94812c06e28f9ba757076d961cc18d87ffffd289198fadd7231c7f4b
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          env:
+            - name: NEXT_PUBLIC_PRODUCT_SERVICE_URL
+              value: "http://172.31.18.115:8000"
+            - name: NEXT_PUBLIC_ORDER_SERVICE_URL
+              value: "http://172.31.18.115:8001"
+            - name: NEXT_PUBLIC_PAYMENT_SERVICE_URL
+              value: "http://172.31.31.194:8002"
+            - name: NEXT_PUBLIC_AUTH_SERVICE_URL
+              value: "http://172.31.18.115:8003"
+          ports:
+            - containerPort: 3000
+          resources:
+            requests: { memory: "150Mi", cpu: "200m" }
+            limits: { memory: "300Mi", cpu: "800m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin
+  namespace: microservices
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 3001 # EXTERNAL PORT
+      targetPort: 3001
+  selector:
+    app: admin
+
+# --- CLIENT APP (Port 3000) ---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      imagePullSecrets:
+        - name: ecr-secret
+      # FORCE TO WORKER NODE
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ip-172-31-31-194
+      containers:
+        - name: client
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/client@sha256:fc63e576882bc095fde84ed30731b1e3fcf5604857069019911be51163a8bb5f
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          env:
+            - name: NEXT_PUBLIC_PRODUCT_SERVICE_URL
+              value: "http://172.31.18.115:8000"
+            - name: NEXT_PUBLIC_ORDER_SERVICE_URL
+              value: "http://172.31.18.115:8001"
+            - name: NEXT_PUBLIC_PAYMENT_SERVICE_URL
+              value: "http://172.31.31.194:8002"
+            - name: NEXT_PUBLIC_AUTH_SERVICE_URL
+              value: "http://172.31.18.115:8003"
+          ports:
+            - containerPort: 3000
+          resources:
+            requests: { memory: "150Mi", cpu: "200m" }
+            limits: { memory: "300Mi", cpu: "800m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  namespace: microservices
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 3000 
+      targetPort: 3000
+  selector:
+    app: client

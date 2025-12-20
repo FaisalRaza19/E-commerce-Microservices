@@ -1,0 +1,245 @@
+# --- PRODUCT SERVICE ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      imagePullSecrets:
+        - name: ecr-secret
+      containers:
+        - name: product-service
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/product-service@sha256:8c18a9bb936964cdc2819c837c2bfd5c8661fa5b3c9f97c779decba5dad623ce
+          env:
+            - name: PORT   # FIX: Explicitly set the port for the Node app
+              value: "3000"
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          ports:
+            - containerPort: 3000
+          resources:
+            requests: { memory: "80Mi", cpu: "50m" }
+            limits: { memory: "180Mi", cpu: "400m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: microservices
+spec:
+  type: NodePort      # FIX: Changed from LoadBalancer to NodePort
+  selector:
+    app: product-service
+  ports:
+    - protocol: TCP
+      port: 8000      # Internal Cluster Port
+      targetPort: 3000 # Container Port
+      nodePort: 30000 # EXTERNAL ACCESS PORT (Must be 30000+)
+
+# --- ORDER SERVICE ---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      imagePullSecrets:
+        - name: ecr-secret
+      containers:
+        - name: order-service
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service@sha256:df79b865c4a6fc8f319522186f494a358e7e30b4e1e90ac84a9856059f618a83
+          env:
+            - name: PORT
+              value: "3000"
+            - name: HOST
+              value: "0.0.0.0"
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          ports:
+            - containerPort: 3000
+          resources:
+            requests: { memory: "80Mi", cpu: "50m" }
+            limits: { memory: "180Mi", cpu: "400m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: microservices
+spec:
+  type: NodePort
+  selector:
+    app: order-service
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 3000
+      nodePort: 30001 # EXTERNAL ACCESS PORT
+
+# --- PAYMENT SERVICE ---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      imagePullSecrets:
+        - name: ecr-secret
+      containers:
+        - name: payment-service
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/payment-service@sha256:67d2ad7a53cf1e3d3a089d36bc634e44afd5004b3276f79ab35eef02fee8fa02
+          env:
+            - name: PORT
+              value: "3000"
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          ports:
+            - containerPort: 3000
+          resources:
+            requests: { memory: "80Mi", cpu: "50m" }
+            limits: { memory: "200Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: microservices
+spec:
+  type: NodePort
+  selector:
+    app: payment-service
+  ports:
+    - protocol: TCP
+      port: 8002
+      targetPort: 3000
+      nodePort: 30002 # EXTERNAL ACCESS PORT
+
+# --- AUTH SERVICE ---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      imagePullSecrets:
+        - name: ecr-secret
+      containers:
+        - name: auth-service
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/auth-service@sha256:034951d04d1bf3451cc71816ca7dbd60b2ca6a00cd98eaed175263cc8715ec10
+          env:
+            - name: PORT
+              value: "3000"
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          ports:
+            - containerPort: 3000
+          resources:
+            requests: { memory: "80Mi", cpu: "50m" }
+            limits: { memory: "150Mi", cpu: "400m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: microservices
+spec:
+  type: NodePort
+  selector:
+    app: auth-service
+  ports:
+    - protocol: TCP
+      port: 8003
+      targetPort: 8003
+      nodePort: 30003 # EXTERNAL ACCESS PORT
+
+# --- EMAIL SERVICE ---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-service
+  namespace: microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: email-service
+  template:
+    metadata:
+      labels:
+        app: email-service
+    spec:
+      imagePullSecrets:
+        - name: ecr-secret
+      containers:
+        - name: email-service
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/email-service@sha256:c78d832a54c2d2117c6e56f6b81efb11241f8b8d9374c87faed72d11783d4a15
+          env:
+            - name: PORT
+              value: "3000"
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          ports:
+            - containerPort: 3000
+          resources:
+            requests: { memory: "60Mi", cpu: "50m" }
+            limits: { memory: "120Mi", cpu: "300m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: email-service
+  namespace: microservices
+spec:
+  type: NodePort  # Explicitly allowing internal access if needed, or remove if internal only
+  selector:
+    app: email-service
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      # nodePort is optional here if you don't need external access for email

@@ -32,7 +32,7 @@ const start = async () => {
     try {
         await Promise.all([connectOrderDB(), producer.connect(), consumer.connect()]);
         await runKafkaSubscriptions();
-        fastify.listen({ port })
+        fastify.listen({ port,host: '0.0.0.0'})
         console.log(`fastify app is running on port http://localhost:${port}`)
     } catch (err) {
         fastify.log.error(err)
