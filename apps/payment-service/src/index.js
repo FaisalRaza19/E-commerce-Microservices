@@ -14,11 +14,16 @@ app.use("*", clerkMiddleware());
 const allowedOrigins = process.env.CORS_URL ? process.env.CORS_URL.split(",").map((url) => url.trim()) : [];
 
 app.use(
+  "*", 
   cors({
     origin: (origin) => {
-      if (!origin) return true;
+      if (!origin) return origin;
 
-      return allowedOrigins.includes(origin);
+      if (allowedOrigins.includes(origin)) {
+        return origin;
+      }
+      
+      return null;
     },
     credentials: true,
   })

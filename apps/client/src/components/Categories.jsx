@@ -37,9 +37,11 @@ function CategoriesContent() {
 
 
 const Categories = () => {
-    <Suspense fallback={<div className="flex items-center justify-center mt-12">Loading Categories...</div>}>
-        <CategoriesContent />
-    </Suspense>
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center mt-12">Loading Categories...</div>}>
+            <CategoriesContent />
+        </Suspense>
+    )
 };
 
 export default Categories

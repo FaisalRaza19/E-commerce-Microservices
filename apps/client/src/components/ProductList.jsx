@@ -23,6 +23,9 @@ function ProductListContent({ params }) {
         }${search ? `&search=${search}` : ""}&sort=${sort}${params === "homepage" ? "&limit=8" : ""}`;
 
       const res = await fetch(url);
+
+      if (!res.ok) throw new Error("Failed to fetch products");
+
       const data = await res.json();
       setProducts(data);
     } catch (error) {
@@ -37,7 +40,11 @@ function ProductListContent({ params }) {
   }, [category, sort, search, params]);
 
   if (loading) {
-    return <p className="text-center text-gray-500">Loading products...</p>;
+    return (
+      <div className="w-full flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
   }
 
   return (
@@ -67,11 +74,14 @@ function ProductListContent({ params }) {
       )}
     </div>
   );
-};
+}
 
 const ProductList = ({ params }) => {
-  <Suspense fallback={<div className="flex items-center justify-center mt-12">Loading Product List...</div>}>
-    <ProductListContent params={params} />
-  </Suspense>
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <ProductListContent params={params} />
+    </Suspense>
+  );
 };
+
 export default ProductList;

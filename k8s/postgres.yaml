@@ -29,7 +29,6 @@ spec:
       labels:
         app: postgres
     spec:
-      # PREFERENCE: Tries to put DB on Worker Node (More RAM available there)
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -52,7 +51,6 @@ spec:
               value: "qwerty"
             - name: POSTGRES_DB
               value: "products"
-          # OPTIMIZATION: Low memory tuning for t3.small/medium instances
           command: ["docker-entrypoint.sh"]
           args:
             [
@@ -74,7 +72,7 @@ spec:
               mountPath: /var/lib/postgresql/data
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "admin"]
+              command: ["pg_isready", "-U", "admin", "-d", "products"]
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5

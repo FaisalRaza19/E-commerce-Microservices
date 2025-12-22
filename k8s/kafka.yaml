@@ -23,7 +23,7 @@ spec:
     matchLabels:
       app: kafka
   serviceName: kafka-headless
-  replicas: 2 # CHANGED: 2 Brokers fits perfectly (1 per node)
+  replicas: 2 
   podManagementPolicy: Parallel
   template:
     metadata:
