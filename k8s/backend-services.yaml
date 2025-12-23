@@ -118,7 +118,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: payment-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/payment-service@sha256:066d5d7892ee7e0e9f7f1db8865bc417b6a2ad533249e3f50f7034090b1b4900
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/payment-service@sha256:b63a062509fdd415feebf676dee9cc5177f3218db0105e05a6d6566e74fda108
           env:
             - name: PORT
               value: "3000"

@@ -2,16 +2,16 @@ name: Deploy Microservices
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - 'apps/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'package-lock.json'
+      - "apps/**"
+      - "packages/**"
+      - "package.json"
+      - "package-lock.json"
   workflow_dispatch:
     inputs:
       force_build_all:
-        description: 'Force build ALL services regardless of changes?'
+        description: "Force build ALL services regardless of changes?"
         required: true
         default: false
         type: boolean
@@ -20,6 +20,20 @@ env:
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
   IMAGE_TAG: 1.0.${{ github.run_number }}
+
+  # --- FRONTEND BUILD VARIABLES ---
+  NEXT_PUBLIC_PRODUCT_SERVICE_URL: "http://13.62.136.49:30000"
+  NEXT_PUBLIC_ORDER_SERVICE_URL: "http://13.62.136.49:30001"
+  NEXT_PUBLIC_PAYMENT_SERVICE_URL: "http://13.62.136.49:30002"
+  NEXT_PUBLIC_AUTH_SERVICE_URL: "http://13.62.136.49:30003"
+
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA"
+  NEXT_PUBLIC_CLERK_SIGN_IN_URL: "/sign-in"
+  NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: "/"
+  NEXT_PUBLIC_CLERK_SIGN_UP_URL: "/sign-up"
+  NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: "/"
+
+  NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: "faisalraza"
 
 permissions:
   id-token: write
@@ -38,32 +52,32 @@ jobs:
       payment: ${{ steps.filter.outputs.payment }}
       product: ${{ steps.filter.outputs.product }}
     steps:
-    - uses: actions/checkout@v4
-    - uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        filters: |
-          admin:
-            - 'apps/Admin/**'
-            - 'packages/**'
-          client:
-            - 'apps/client/**'
-            - 'packages/**'
-          auth:
-            - 'apps/auth-service/**'
-            - 'packages/**'
-          email:
-            - 'apps/email-service/**'
-            - 'packages/**'
-          order:
-            - 'apps/order-service/**'
-            - 'packages/**'
-          payment:
-            - 'apps/payment-service/**'
-            - 'packages/**'
-          product:
-            - 'apps/product-service/**'
-            - 'packages/**'
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            admin:
+              - 'apps/Admin/**'
+              - 'packages/**'
+            client:
+              - 'apps/client/**'
+              - 'packages/**'
+            auth:
+              - 'apps/auth-service/**'
+              - 'packages/**'
+            email:
+              - 'apps/email-service/**'
+              - 'packages/**'
+            order:
+              - 'apps/order-service/**'
+              - 'packages/**'
+            payment:
+              - 'apps/payment-service/**'
+              - 'packages/**'
+            product:
+              - 'apps/product-service/**'
+              - 'packages/**'
 
   # JOB 2: Build and Push Images
   build-and-push:
@@ -137,6 +151,17 @@ jobs:
         run: |
           # Build using the specific Dockerfile inside the apps folder, but context is Root (.)
           docker build \
+            --build-arg NEXT_PUBLIC_PRODUCT_SERVICE_URL="${{ env.NEXT_PUBLIC_PRODUCT_SERVICE_URL }}" \
+            --build-arg NEXT_PUBLIC_ORDER_SERVICE_URL="${{ env.NEXT_PUBLIC_ORDER_SERVICE_URL }}" \
+            --build-arg NEXT_PUBLIC_PAYMENT_SERVICE_URL="${{ env.NEXT_PUBLIC_PAYMENT_SERVICE_URL }}" \
+            --build-arg NEXT_PUBLIC_AUTH_SERVICE_URL="${{ env.NEXT_PUBLIC_AUTH_SERVICE_URL }}" \
+            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL="${{ env.NEXT_PUBLIC_CLERK_SIGN_IN_URL }}" \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL="${{ env.NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL }}" \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_URL="${{ env.NEXT_PUBLIC_CLERK_SIGN_UP_URL }}" \
+            --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL="${{ env.NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL }}" \
+            --build-arg NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="${{ env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}" \
+            --build-arg CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY }}" \
             -f ${{ matrix.context }}/Dockerfile \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \

@@ -18,20 +18,10 @@ spec:
         - name: ecr-secret
       containers:
         - name: admin
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/admin@sha256:b5bd05215c3bb264ab84c4bd3dfa657584d099ce481299143ee7de71d13d3c35
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/admin@sha256:4ad6bafe1699729245e70419321efd059807145931f66567666781c2c3b81bf3
           envFrom:
             - secretRef:
                 name: app-secrets
-          env:
-            # FIX: Point to Public IP + NodePorts
-            - name: NEXT_PUBLIC_PRODUCT_SERVICE_URL
-              value: http://13.62.136.49:30000
-            - name: NEXT_PUBLIC_ORDER_SERVICE_URL
-              value: http://13.62.136.49:30001
-            - name: NEXT_PUBLIC_PAYMENT_SERVICE_URL
-              value: http://13.62.136.49:30002
-            - name: NEXT_PUBLIC_AUTH_SERVICE_URL
-              value: http://13.62.136.49:30003
           ports:
             - containerPort: 3001
           resources:
@@ -74,20 +64,10 @@ spec:
         - name: ecr-secret
       containers:
         - name: client
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/client@sha256:05d874ee4630a8ad3e31b570dde02ebd701b5542984cf5154cf64f5fb87ce6ab
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/client@sha256:58e902dd2448cb0fa6e815570ce302a70b0a9e67885f8b67f4d89ef84e6bcfce
           envFrom:
             - secretRef:
                 name: app-secrets
-          env:
-            # FIX: Point to Public IP + NodePorts
-            - name: NEXT_PUBLIC_PRODUCT_SERVICE_URL
-              value: http://13.62.136.49:30000
-            - name: NEXT_PUBLIC_ORDER_SERVICE_URL
-              value: http://13.62.136.49:30001
-            - name: NEXT_PUBLIC_PAYMENT_SERVICE_URL
-              value: http://13.62.136.49:30002
-            - name: NEXT_PUBLIC_AUTH_SERVICE_URL
-              value: http://13.62.136.49:30003
           ports:
             - containerPort: 3000
           resources:
