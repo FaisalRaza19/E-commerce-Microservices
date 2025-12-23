@@ -161,7 +161,6 @@ jobs:
             --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_URL="${{ env.NEXT_PUBLIC_CLERK_SIGN_UP_URL }}" \
             --build-arg NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL="${{ env.NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL }}" \
             --build-arg NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="${{ env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}" \
-            --build-arg CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY }}" \
             -f ${{ matrix.context }}/Dockerfile \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
