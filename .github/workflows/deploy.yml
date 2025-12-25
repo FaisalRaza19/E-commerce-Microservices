@@ -22,10 +22,10 @@ env:
   IMAGE_TAG: 1.0.${{ github.run_number }}
 
   # --- FRONTEND BUILD VARIABLES ---
-  NEXT_PUBLIC_PRODUCT_SERVICE_URL: "http://13.62.136.49:30000"
-  NEXT_PUBLIC_ORDER_SERVICE_URL: "http://13.62.136.49:30001"
-  NEXT_PUBLIC_PAYMENT_SERVICE_URL: "http://13.62.136.49:30002"
-  NEXT_PUBLIC_AUTH_SERVICE_URL: "http://13.62.136.49:30003"
+  NEXT_PUBLIC_PRODUCT_SERVICE_URL: "https://trendlama-client.duckdns.org/api/products"
+  NEXT_PUBLIC_ORDER_SERVICE_URL: "https://trendlama-client.duckdns.org/api/orders"
+  NEXT_PUBLIC_PAYMENT_SERVICE_URL: "https://trendlama-client.duckdns.org/api/payments"
+  NEXT_PUBLIC_AUTH_SERVICE_URL: "https://trendlama-client.duckdns.org/api/auth"
 
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_ZWxlY3RyaWMtZWxlcGhhbnQtNzIuY2xlcmsuYWNjb3VudHMuZGV2JA"
   NEXT_PUBLIC_CLERK_SIGN_IN_URL: "/sign-in"
