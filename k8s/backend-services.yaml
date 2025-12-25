@@ -18,7 +18,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: product-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/product-service@sha256:7bb8a0d3ec88177c9ae360e9fff916608346474a80c2595d49d07208b2772304
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/product-service@sha256:5c76d31b17b94ab7596730101e7eec8fc562faf0a137136233c49ce3b2f21552
           env:
             - name: PORT   # FIX: Explicitly set the port for the Node app
               value: "3000"
@@ -67,7 +67,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: order-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service@sha256:212bf0df77c2b42523bc783355d80d4dd969262523bbe7c9ba79278448b2b51c
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/order-service@sha256:762ac194c4441cc57da8b22b809ff97eecd72e28e721d3481cf172a6b46a2ebe
           env:
             - name: PORT
               value: "3000"
@@ -118,7 +118,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: payment-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/payment-service@sha256:b63a062509fdd415feebf676dee9cc5177f3218db0105e05a6d6566e74fda108
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/payment-service@sha256:7faea4932a47a1db0d08d9b43618c2718ae3053ece109d91d2267ba71bcff0d7
           env:
             - name: PORT
               value: "3000"
@@ -167,7 +167,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: auth-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/auth-service@sha256:0bae14d8b3f4a50d834a908830af5c53089ebb986ea11ba14e408f178b6557e9
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/auth-service@sha256:83167caed09748b1c608b9aaf6d7d23d3cb60d31728bd30e42644d127dde9325
           env:
             - name: PORT
               value: "3000"
@@ -216,7 +216,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: email-service
-          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/email-service@sha256:c78d832a54c2d2117c6e56f6b81efb11241f8b8d9374c87faed72d11783d4a15
+          image: 256056679502.dkr.ecr.eu-north-1.amazonaws.com/email-service@sha256:b3ee256565d2256669842b3b2d765d1c65877576f7ae196fd360aa12abc8a2f3
           env:
             - name: PORT
               value: "3000"
