@@ -1,135 +1,316 @@
-# Turborepo starter
+# 🛒 TrendLama – E-Commerce Microservices Platform
 
-This Turborepo starter is maintained by the Turborepo core team.
+A **production-grade, cloud-native E-Commerce platform** built with **modern microservices architecture** and a **Turborepo-based monorepo**. The system consists of **6 independently deployable services**, designed for **scalability, resilience, and real-world SaaS deployments**.
 
-## Using this example
+This project demonstrates **full‑stack, DevOps, and cloud engineering best practices**, including CI/CD, Docker, Kubernetes (k3s), AWS ECR, Kafka-based eventing, and domain-based routing via NGINX.
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
-```
+## 🌐 Live Applications
 
-## What's inside?
+* **Client (Storefront):** [http://trendlama-client.duckdns.org/](http://trendlama-client.duckdns.org/)
+* **Admin Dashboard:** [http://trendlama-admin.duckdns.org/](http://trendlama-admin.duckdns.org/)
 
-This Turborepo includes the following packages/apps:
+---
 
-### Apps and Packages
+## 🚀 Key Highlights
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+* **Microservices Architecture (6 Services)**
+* **Monorepo with Turborepo (Apps + Packages)**
+* **API-first design (REST)**
+* **Event-driven communication with Kafka**
+* **Dockerized services with per-service Dockerfiles**
+* **Automated CI/CD using GitHub Actions**
+* **AWS ECR image builds on every service change**
+* **Kubernetes (k3s) deployment on EC2**
+* **NGINX reverse proxy with custom domains**
+* **Secure authentication via Clerk**
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+---
 
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+## 🧱 Architecture Overview
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+Users (Browser)
+   │
+   ├── Client (Next.js)
+   ├── Admin (Next.js)
+   │
+NGINX Reverse Proxy
+   │
+-------------------------------------------------
+| Auth | Product | Order | Payment (Microservices)
+-------------------------------------------------
+   │
+Databases + Kafka Event Bus
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+Each service:
+
+* Owns its **own database**
+* Is **independently deployable & scalable**
+* Communicates via **REST + Kafka events**
+
+---
+
+## 🧩 Services Breakdown (6 Services)
+
+### 1️⃣ Client Application (Storefront)
+
+**Description:**
+Customer-facing E-Commerce web application.
+
+**Tech Stack:**
+
+* Next.js 16
+* React 19
+* Clerk Authentication
+* Stripe Client SDK
+* Zustand (State Management)
+* Tailwind CSS
+
+**Responsibilities:**
+
+* Product browsing
+* Cart & checkout
+* Secure user authentication
+
+---
+
+### 2️⃣ Admin Application
+
+**Description:**
+Internal admin dashboard for managing the platform.
+
+**Tech Stack:**
+
+* Next.js 16
+* React 19
+* React Query & Tables
+* Radix UI
+* Clerk Authentication
+
+**Responsibilities:**
+
+* Product management
+* Order monitoring
+* Business analytics
+
+---
+
+### 3️⃣ Authentication Service
+
+**Description:**
+Central authentication & identity service.
+
+**Tech Stack:**
+
+* Node.js
+* Express
+* Clerk (Auth Provider)
+* Kafka (Event Publishing)
+
+**Responsibilities:**
+
+* Authentication middleware
+* Token validation
+* User identity propagation
+
+---
+
+### 4️⃣ Product Service
+
+**Description:**
+Handles product catalog and inventory management.
+
+**Tech Stack:**
+
+* Node.js
+* Express
+* Prisma
+* PostgreSQL
+* Kafka
+
+**Responsibilities:**
+
+* Product CRUD
+* Inventory tracking
+* Product-related events
+
+---
+
+### 5️⃣ Order Service
+
+**Description:**
+Manages order lifecycle and order history.
+
+**Tech Stack:**
+
+* Node.js
+* Fastify
+* MongoDB Atlas
+* Kafka
+
+**Responsibilities:**
+
+* Order creation
+* Order status tracking
+* Order events (created, paid, completed)
+
+---
+
+### 6️⃣ Payment Service
+
+**Description:**
+Secure payment processing and transaction handling.
+
+**Tech Stack:**
+
+* Node.js
+* Hono
+* Stripe
+* Kafka
+
+**Responsibilities:**
+
+* Payment intent creation
+* Payment verification
+* Payment confirmation events
+
+---
+
+## 🗂️ Monorepo Structure
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+trendlama/
+│
+├── apps/
+│   ├── client
+│   ├── admin
+│   ├── auth-service
+│   ├── product-service
+│   ├── order-service
+│   └── payment-service
+│
+├── packages/
+│   ├── kafka
+│   ├── product-database
+│   └── order-db
+│
+├── .github/workflows/
+├── docker/
+├── k8s/
+└── README.md
 ```
 
-### Develop
+---
 
-To develop all apps and packages, run the following command:
+## ⚙️ Local Development
 
-```
-cd my-turborepo
+### Prerequisites
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+* Node.js >= 18
+* Docker & Docker Compose
+* Git
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+### Install Dependencies
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```bash
+npm install
 ```
 
-### Remote Caching
+### Run All Services
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```bash
+npm run dev
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+---
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+## 🐳 Docker & CI/CD
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
+* Each service has its **own Dockerfile**
+* GitHub Actions pipeline:
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+  * Builds Docker images per service
+  * Pushes images to **AWS ECR**
+  * Tags images per commit
 
-## Useful Links
+---
 
-Learn more about the power of Turborepo:
+## ☸️ Kubernetes Deployment (k3s)
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+* Hosted on **AWS EC2**
+* Lightweight **k3s Kubernetes cluster**
+* Deployment flow:
+
+  1. CI builds & pushes image to ECR
+  2. Image URL updated in Kubernetes manifests
+  3. Manifests applied to k3s cluster
+
+---
+
+## 🌐 Networking & Domains
+
+* **NGINX Reverse Proxy**
+* Domain-based routing:
+
+  * `trendlama-client.duckdns.org` → Client App
+  * `trendlama-admin.duckdns.org` → Admin App
+
+---
+
+## 🔐 Security Best Practices
+
+* Clerk-based authentication
+* JWT verification at service level
+* Environment-based secrets
+* Service isolation
+
+---
+
+## 📈 Scalability & Reliability
+
+* Stateless microservices
+* Horizontal pod scaling
+* Kafka-based async communication
+* Database per service pattern
+
+---
+
+## 🧪 Testing
+
+* API testing with Postman
+* Service-level validation
+* CI checks via Turborepo
+
+---
+
+## 📌 Future Enhancements
+
+* Observability (Prometheus + Grafana)
+* Distributed tracing
+* Dead-letter queues (Kafka)
+* Autoscaling with HPA
+
+---
+
+## 👨‍💻 Author
+
+**Faisal Raza**
+Full Stack Cloud & DevOps Engineer
+
+* GitHub: [https://github.com/FaisalRaza19](https://github.com/FaisalRaza19)
+* LinkedIn: [https://linkedin.com/in/heyfaisalraza](https://linkedin.com/in/heyfaisalraza)
+
+---
+
+## ⭐ Show Your Support
+
+If you like this project, give it a ⭐ on GitHub!
+
+---
+
+## 📄 License
+
+MIT License
