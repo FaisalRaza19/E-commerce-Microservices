@@ -56,6 +56,7 @@ Each service:
 ## 🧩 Services Breakdown (6 Services)
 
 ### 1️⃣ Client Application (Storefront)
+![Client Storefront](./pic2.png)
 
 **Description:**
 Customer-facing E-Commerce web application.
@@ -78,6 +79,7 @@ Customer-facing E-Commerce web application.
 ---
 
 ### 2️⃣ Admin Application
+![Client Storefront](./admin.png)
 
 **Description:**
 Internal admin dashboard for managing the platform.
